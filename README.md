@@ -1,4 +1,4 @@
-# TimeFlow
+# TimeFlow (app name: bt28staff)
 
 Real-time HR & payroll for small shops/cafes. One app, two roles — owners get a
 live overview of who's clocked in, staff roster, approvals, payroll runs,
