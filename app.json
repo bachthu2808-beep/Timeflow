@@ -8,12 +8,14 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.timeflow.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "TimeFlow checks your location only when you tap Clock In or Clock Out, to confirm you're at the shop.",
         "NSCameraUsageDescription": "TimeFlow takes a photo when you clock in, so your owner can verify who worked each shift."
       }
     },
     "android": {
+      "package": "com.timeflow.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

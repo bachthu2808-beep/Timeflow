@@ -64,6 +64,39 @@ supabase/
    joining a shop" — their profile is created automatically from the
    invitation, no manual code-sharing needed.
 
+## Getting it to a few testers (before an app store submission)
+
+Two options, neither requires an Apple/Google developer account yet:
+
+**Option A — Expo Go + tunnel (fastest, zero cost)**
+```
+npm run start:tunnel
+```
+This prints a QR code and a link that work from anywhere (not just your
+wifi). Send the link to your testers — they install the free **Expo Go**
+app, open the link, and the app loads inside it. Best for quick iteration;
+every tester needs Expo Go installed, and Android push notifications don't
+fully work inside Expo Go (a Google Play restriction on shell apps, not a
+bug in this codebase).
+
+**Option B — EAS internal build (a real installable app icon)**
+```
+npm install -g eas-cli
+eas login          # free Expo account
+eas build --profile preview --platform android   # installable APK, share the link
+eas build --profile preview --platform ios       # needs a free Apple ID for ad-hoc signing
+```
+`eas.json` is already configured with a `preview` profile (internal
+distribution). The Android build produces a direct-install APK link — no
+Play Store needed. The iOS build needs your Apple ID registered as an ad-hoc
+tester device via EAS's device-registration flow (still no paid Developer
+Program required for a handful of test devices, though Apple does cap how
+many can be registered this way).
+
+Change `com.timeflow.app` in `app.json` (`ios.bundleIdentifier` /
+`android.package`) to your own identifier before building if you plan to
+eventually publish under your own name.
+
 ## Testing
 
 ```
