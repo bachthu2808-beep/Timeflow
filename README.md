@@ -56,6 +56,13 @@ supabase/
 3. `npm install`
 4. `npm start` — scan the QR with Expo Go, or run `npm run ios` / `npm run
    android` with a dev client.
+5. In the app: **Sign up as the owner** first (Login screen → "New here?
+   Create an account" → "I'm the owner"). Then go to the **Shop** tab and
+   save your shop (name, geofence radius, "Use my current location").
+6. Invite staff from **Roster → Invite staff** (email + pay terms). The
+   employee then signs up in the app with that same email, choosing "I'm
+   joining a shop" — their profile is created automatically from the
+   invitation, no manual code-sharing needed.
 
 ## Testing
 
@@ -70,6 +77,12 @@ before changing pay logic, since a payroll bug is a trust-breaking bug.
 ## Feature status
 
 **Built and tested this round:**
+- Owner and employee sign-up (email invitation flow, DB-enforced via
+  security-definer Postgres functions so a client can't fabricate
+  `owner_id`)
+- Shop setup screen (name, geofence radius, daily labor budget, "use my
+  current location")
+- Invite-staff form on the Roster screen
 - Holiday pay + split-shift overtime pooling in `calculatePay`
 - Attendance streaks (on-time gamification badge)
 - Owner labor-cost alert banner (vs. a per-shop daily budget)
@@ -103,5 +116,5 @@ before changing pay logic, since a payroll bug is a trust-breaking bug.
   `GENERIC_PAY_RULES`. Swap in a real rule set once the launch market/country
   is decided; the engine already supports multi-tier overtime, rounding,
   holiday pay, and paid-vs-unpaid lunch without further code changes.
-- Add-staff form on the Roster screen (invite by email, set pay basis/rate) —
-  staff rows must currently be created directly in Supabase.
+- Multi-shop switcher UI — an owner with more than one shop can only manage
+  the first one created; the data model supports more, the UI doesn't yet.

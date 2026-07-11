@@ -98,6 +98,20 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export interface StaffInvitation {
+  id: string;
+  ownerId: string;
+  email: string;
+  fullName: string;
+  payBasis: PayBasis;
+  hourlyRate: number | null;
+  monthlyRate: number | null;
+  lunchAllowancePerShift: number;
+  defaultShopId: string | null;
+  consumedAt: string | null;
+  createdAt: string;
+}
+
 export interface AuditLogEntry {
   id: string;
   ownerId: string;

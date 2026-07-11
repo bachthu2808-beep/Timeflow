@@ -177,6 +177,73 @@ create trigger approval_requests_audit
   after insert or update on approval_requests
   for each row execute function log_approval_audit();
 
+-- Staff invitations: owner enters an employee's email + pay terms before the
+-- employee has an account. When that email signs up, the app looks up and
+-- consumes the matching invitation to create the employee's profile row.
+create table staff_invitations (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references profiles (id) on delete cascade,
+  email text not null,
+  full_name text not null,
+  pay_basis text not null check (pay_basis in ('hourly', 'monthly')),
+  hourly_rate numeric,
+  monthly_rate numeric,
+  lunch_allowance_per_shift numeric not null default 0,
+  default_shop_id uuid references shops (id) on delete set null,
+  consumed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table staff_invitations enable row level security;
+
+create policy "staff_invitations: owner manages own invitations" on staff_invitations
+  for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+create policy "staff_invitations: invitee reads their own pending invitation" on staff_invitations
+  for select using (email = (auth.jwt() ->> 'email') and consumed_at is null);
+
+-- Signup is DB-enforced via security-definer functions rather than a broad
+-- "insert your own profile" RLS policy, so a client can't fabricate owner_id.
+
+create or replace function create_owner_profile(p_full_name text)
+returns void as $$
+begin
+  insert into profiles (id, owner_id, role, full_name, pay_basis)
+  values (auth.uid(), auth.uid(), 'owner', p_full_name, 'monthly');
+end;
+$$ language plpgsql security definer;
+
+grant execute on function create_owner_profile(text) to authenticated;
+
+create or replace function accept_staff_invitation(invitation_id uuid)
+returns void as $$
+declare
+  inv staff_invitations%rowtype;
+begin
+  select * into inv from staff_invitations
+    where id = invitation_id
+      and email = (auth.jwt() ->> 'email')
+      and consumed_at is null;
+
+  if not found then
+    raise exception 'Invitation not found or already used';
+  end if;
+
+  insert into profiles (
+    id, owner_id, role, full_name, pay_basis, hourly_rate, monthly_rate,
+    lunch_allowance_per_shift, default_shop_id
+  )
+  values (
+    auth.uid(), inv.owner_id, 'employee', inv.full_name, inv.pay_basis, inv.hourly_rate,
+    inv.monthly_rate, inv.lunch_allowance_per_shift, inv.default_shop_id
+  );
+
+  update staff_invitations set consumed_at = now() where id = inv.id;
+end;
+$$ language plpgsql security definer;
+
+grant execute on function accept_staff_invitation(uuid) to authenticated;
+
 -- Row Level Security: owners see/manage their own shop's data, employees see
 -- only their own records (plus the shop they're assigned to, for geofencing).
 

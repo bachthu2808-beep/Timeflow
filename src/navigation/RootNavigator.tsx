@@ -1,14 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { registerForPushNotifications } from '../lib/pushNotifications';
 import LoginScreen from '../screens/auth/LoginScreen';
+import SignUpScreen from '../screens/auth/SignUpScreen';
 import OwnerTabs from './OwnerTabs';
 import EmployeeTabs from './EmployeeTabs';
 
 export default function RootNavigator() {
   const { session, profile, loading } = useAuth();
+  const [showSignUp, setShowSignUp] = useState(false);
 
   useEffect(() => {
     if (profile?.id) {
@@ -26,7 +28,17 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {!session ? <LoginScreen /> : profile?.role === 'owner' ? <OwnerTabs /> : <EmployeeTabs />}
+      {!session ? (
+        showSignUp ? (
+          <SignUpScreen onBackToLogin={() => setShowSignUp(false)} />
+        ) : (
+          <LoginScreen onSignUp={() => setShowSignUp(true)} />
+        )
+      ) : profile?.role === 'owner' ? (
+        <OwnerTabs />
+      ) : (
+        <EmployeeTabs />
+      )}
     </NavigationContainer>
   );
 }

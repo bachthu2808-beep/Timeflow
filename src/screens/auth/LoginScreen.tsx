@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
-export default function LoginScreen() {
+interface Props {
+  onSignUp: () => void;
+}
+
+export default function LoginScreen({ onSignUp }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +44,9 @@ export default function LoginScreen() {
       <Pressable style={styles.button} onPress={handleSignIn} disabled={submitting}>
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign in</Text>}
       </Pressable>
+      <Pressable onPress={onSignUp}>
+        <Text style={styles.link}>New here? Create an account</Text>
+      </Pressable>
     </View>
   );
 }
@@ -51,4 +58,5 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   error: { color: '#c00' },
+  link: { color: '#06c', textAlign: 'center', marginTop: 16 },
 });
