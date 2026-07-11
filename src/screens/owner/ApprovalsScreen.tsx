@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import SectionLabel from '../../components/SectionLabel';
+import { colors, radii, shadow, spacing } from '../../theme';
 import type { ApprovalRequest, SwapRequest } from '../../types';
 
 export default function ApprovalsScreen() {
@@ -97,14 +99,13 @@ export default function ApprovalsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{t('owner.approvals.pendingRequests')}</Text>
-      <FlatList
-        data={requests}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>{t('owner.approvals.nothingPending')}</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+      <SectionLabel>{t('owner.approvals.pendingRequests')}</SectionLabel>
+      {requests.length === 0 ? (
+        <Text style={styles.empty}>{t('owner.approvals.nothingPending')}</Text>
+      ) : (
+        requests.map((item) => (
+          <View key={item.id} style={styles.card}>
             <View style={{ flex: 1 }}>
               <Text style={styles.kind}>{item.kind === 'time_off' ? t('owner.approvals.timeOff') : t('owner.approvals.scheduleChange')}</Text>
               <Text style={styles.note}>{item.note ?? ''}</Text>
@@ -116,17 +117,16 @@ export default function ApprovalsScreen() {
               <Text style={styles.actionText}>{t('common.deny')}</Text>
             </Pressable>
           </View>
-        )}
-      />
+        ))
+      )}
 
-      <Text style={styles.title}>{t('owner.approvals.swapsAwaitingOk')}</Text>
-      <FlatList
-        data={swaps}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>{t('owner.approvals.nonePending')}</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text style={{ flex: 1 }}>{t('owner.approvals.coworkerAccepted')}</Text>
+      <SectionLabel>{t('owner.approvals.swapsAwaitingOk')}</SectionLabel>
+      {swaps.length === 0 ? (
+        <Text style={styles.empty}>{t('owner.approvals.nonePending')}</Text>
+      ) : (
+        swaps.map((item) => (
+          <View key={item.id} style={styles.card}>
+            <Text style={{ flex: 1, color: colors.textPrimary }}>{t('owner.approvals.coworkerAccepted')}</Text>
             <Pressable style={styles.approve} onPress={() => respondToSwap(item, true)}>
               <Text style={styles.actionText}>{t('common.approve')}</Text>
             </Pressable>
@@ -134,20 +134,20 @@ export default function ApprovalsScreen() {
               <Text style={styles.actionText}>{t('common.deny')}</Text>
             </Pressable>
           </View>
-        )}
-      />
-    </View>
+        ))
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 16 },
-  title: { fontSize: 22, fontWeight: '700' },
-  empty: { color: '#888', marginTop: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  kind: { fontWeight: '600' },
-  note: { color: '#888' },
-  approve: { backgroundColor: '#111', borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12 },
-  deny: { backgroundColor: '#c00', borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12 },
-  actionText: { color: '#fff', fontWeight: '600' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  container: { padding: spacing.lg, gap: spacing.sm },
+  empty: { color: colors.textMuted, marginBottom: spacing.md },
+  card: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow },
+  kind: { fontWeight: '700', color: colors.textPrimary },
+  note: { color: colors.textMuted, fontSize: 13 },
+  approve: { backgroundColor: colors.brand, borderRadius: radii.sm, paddingVertical: 8, paddingHorizontal: 12 },
+  deny: { backgroundColor: colors.danger, borderRadius: radii.sm, paddingVertical: 8, paddingHorizontal: 12 },
+  actionText: { color: '#fff', fontWeight: '700' },
 });

@@ -101,6 +101,14 @@
     },
     "roster": {
       "title": "Danh sách nhân viên",
+      "add": "+ Thêm",
+      "searchPlaceholder": "Tìm trong {{count}} nhân viên…",
+      "staffCount": "NHÂN VIÊN · {{count}}",
+      "noJobTitle": "Chưa có chức danh",
+      "perHour": "/giờ",
+      "perMonth": "/tháng",
+      "tapToEditPay": "nhấn để sửa lương",
+      "jobTitlePlaceholder": "Chức danh (VD: Pha chế)",
       "inviteStaff": "Mời nhân viên",
       "noStaffYet": "Chưa có nhân viên nào.",
       "pendingInvitations": "Lời mời đang chờ",
@@ -113,9 +121,7 @@
       "monthlyRatePlaceholder": "Lương theo tháng",
       "lunchAllowancePlaceholder": "Phụ cấp ăn trưa mỗi ca",
       "sending": "Đang gửi…",
-      "sendInvitation": "Gửi lời mời",
-      "hourlyRate": "${{rate}}/giờ",
-      "monthlyRate": "${{rate}}/tháng"
+      "sendInvitation": "Gửi lời mời"
     },
     "schedule": {
       "buildRota": "Xếp lịch làm",
@@ -142,10 +148,13 @@
       "title": "Kỳ trả lương",
       "running": "Đang xử lý…",
       "runButton": "Tính lương & xuất CSV",
+      "exportButton": "Xuất bảng lương (Tuần này)",
       "noRunsYet": "Chưa có kỳ trả lương nào.",
+      "noStaffYet": "Chưa có nhân viên nào.",
       "noStaffTitle": "Chưa có nhân viên",
       "noStaffMessage": "Thêm nhân viên vào danh sách trước khi tính lương.",
       "exportDialogTitle": "Xuất bảng lương",
+      "shiftsAndHours": "{{shifts}} ca · {{hours}} giờ",
       "status": {
         "open": "đang mở",
         "processing": "đang xử lý",

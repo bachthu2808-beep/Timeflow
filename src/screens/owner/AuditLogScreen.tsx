@@ -3,6 +3,7 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { colors, radii, shadow, spacing } from '../../theme';
 import type { AuditLogEntry } from '../../types';
 
 const KNOWN_ACTIONS = ['shift_clock_in', 'shift_updated', 'approval_requested', 'approval_approved', 'approval_denied'];
@@ -39,32 +40,38 @@ export default function AuditLogScreen() {
   }, [profile]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{t('owner.auditLog.title')}</Text>
-      <Text style={styles.subtitle}>{t('owner.auditLog.subtitle')}</Text>
-      <FlatList
-        data={entries}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>{t('owner.auditLog.noActivity')}</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text style={styles.action}>
-              {KNOWN_ACTIONS.includes(item.action) ? t(`owner.auditLog.actions.${item.action}`) : item.action.replace(/_/g, ' ')}
-            </Text>
-            <Text style={styles.time}>{new Date(item.createdAt).toLocaleString()}</Text>
-          </View>
-        )}
-      />
-    </View>
+    <FlatList
+      style={styles.screen}
+      data={entries}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContent}
+      ListHeaderComponent={
+        <View style={styles.headerBlock}>
+          <Text style={styles.title}>{t('owner.auditLog.title')}</Text>
+          <Text style={styles.subtitle}>{t('owner.auditLog.subtitle')}</Text>
+        </View>
+      }
+      ListEmptyComponent={<Text style={styles.empty}>{t('owner.auditLog.noActivity')}</Text>}
+      renderItem={({ item }) => (
+        <View style={styles.card}>
+          <Text style={styles.action}>
+            {KNOWN_ACTIONS.includes(item.action) ? t(`owner.auditLog.actions.${item.action}`) : item.action.replace(/_/g, ' ')}
+          </Text>
+          <Text style={styles.time}>{new Date(item.createdAt).toLocaleString()}</Text>
+        </View>
+      )}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 8 },
-  title: { fontSize: 22, fontWeight: '700' },
-  subtitle: { color: '#888', marginBottom: 8 },
-  empty: { color: '#888', marginTop: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  action: { fontWeight: '600', textTransform: 'capitalize' },
-  time: { color: '#888' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  listContent: { padding: spacing.lg, gap: spacing.sm },
+  headerBlock: { marginBottom: spacing.sm },
+  title: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
+  subtitle: { color: colors.textMuted, marginTop: 4, fontSize: 13 },
+  empty: { color: colors.textMuted, marginTop: spacing.sm },
+  card: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.xs, ...shadow },
+  action: { fontWeight: '700', textTransform: 'capitalize', color: colors.textPrimary },
+  time: { color: colors.textMuted, fontSize: 12, fontFamily: 'monospace' },
 });

@@ -4,6 +4,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import Avatar from '../../components/Avatar';
+import { colors, radii, shadow, spacing } from '../../theme';
 
 export type ChatStackParamList = {
   ChatList: undefined;
@@ -33,27 +35,29 @@ export default function ChatListScreen({ navigation }: NativeStackScreenProps<Ch
   }, [profile]);
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={staff}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>{t('owner.chatList.noStaffToMessage')}</Text>}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.row}
-            onPress={() => navigation.navigate('ChatThread', { staffId: item.id, staffName: item.fullName })}
-          >
-            <Text style={styles.name}>{item.fullName}</Text>
-          </Pressable>
-        )}
-      />
-    </View>
+    <FlatList
+      style={styles.screen}
+      data={staff}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContent}
+      ListEmptyComponent={<Text style={styles.empty}>{t('owner.chatList.noStaffToMessage')}</Text>}
+      renderItem={({ item }) => (
+        <Pressable
+          style={styles.row}
+          onPress={() => navigation.navigate('ChatThread', { staffId: item.id, staffName: item.fullName })}
+        >
+          <Avatar id={item.id} name={item.fullName} size={40} />
+          <Text style={styles.name}>{item.fullName}</Text>
+        </Pressable>
+      )}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24 },
-  empty: { color: '#888' },
-  row: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  name: { fontWeight: '600', fontSize: 16 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  listContent: { padding: spacing.lg, gap: spacing.xs },
+  empty: { color: colors.textMuted },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.xs, ...shadow },
+  name: { fontWeight: '700', fontSize: 15, color: colors.textPrimary },
 });

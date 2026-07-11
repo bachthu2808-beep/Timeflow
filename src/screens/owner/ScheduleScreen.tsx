@@ -4,6 +4,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import Avatar from '../../components/Avatar';
+import SectionLabel from '../../components/SectionLabel';
+import { colors, radii, shadow, spacing } from '../../theme';
 import type { Profile, ScheduledShift, Shop } from '../../types';
 
 export default function ScheduleScreen() {
@@ -107,99 +110,109 @@ export default function ScheduleScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{t('owner.schedule.buildRota')}</Text>
+    <FlatList
+      style={styles.screen}
+      data={schedule}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContent}
+      ListHeaderComponent={
+        <View style={styles.formCard}>
+          <Text style={styles.title}>{t('owner.schedule.buildRota')}</Text>
 
-      <Text style={styles.label}>{t('owner.schedule.staffLabel')}</Text>
-      <View style={styles.chipRow}>
-        {staff.map((s) => (
-          <Pressable
-            key={s.id}
-            onPress={() => setSelectedStaffId(s.id)}
-            style={[styles.chip, selectedStaffId === s.id && styles.chipSelected]}
-          >
-            <Text style={selectedStaffId === s.id ? styles.chipTextSelected : styles.chipText}>{s.fullName}</Text>
+          <Text style={styles.label}>{t('owner.schedule.staffLabel')}</Text>
+          <View style={styles.chipRow}>
+            {staff.map((s) => (
+              <Pressable
+                key={s.id}
+                onPress={() => setSelectedStaffId(s.id)}
+                style={[styles.chip, selectedStaffId === s.id && styles.chipSelected]}
+              >
+                <Text style={selectedStaffId === s.id ? styles.chipTextSelected : styles.chipText}>{s.fullName}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.label}>{t('owner.schedule.shopLabel')}</Text>
+          <View style={styles.chipRow}>
+            {shops.map((s) => (
+              <Pressable
+                key={s.id}
+                onPress={() => setSelectedShopId(s.id)}
+                style={[styles.chip, selectedShopId === s.id && styles.chipSelected]}
+              >
+                <Text style={selectedShopId === s.id ? styles.chipTextSelected : styles.chipText}>{s.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.timeRow}>
+            <Pressable style={styles.timeButton} onPress={() => setPickerTarget('start')}>
+              <Text style={styles.label}>{t('owner.schedule.startLabel')}</Text>
+              <Text style={styles.timeValue}>{startsAt.toLocaleString()}</Text>
+            </Pressable>
+            <Pressable style={styles.timeButton} onPress={() => setPickerTarget('end')}>
+              <Text style={styles.label}>{t('owner.schedule.endLabel')}</Text>
+              <Text style={styles.timeValue}>{endsAt.toLocaleString()}</Text>
+            </Pressable>
+          </View>
+
+          {pickerTarget ? (
+            <DateTimePicker
+              value={pickerTarget === 'start' ? startsAt : endsAt}
+              mode="datetime"
+              onChange={(_event, date) => {
+                if (date) {
+                  pickerTarget === 'start' ? setStartsAt(date) : setEndsAt(date);
+                }
+                setPickerTarget(null);
+              }}
+            />
+          ) : null}
+
+          <Pressable style={styles.addButton} onPress={handleCreate}>
+            <Text style={styles.addButtonText}>{t('owner.schedule.addToRota')}</Text>
           </Pressable>
-        ))}
-      </View>
 
-      <Text style={styles.label}>{t('owner.schedule.shopLabel')}</Text>
-      <View style={styles.chipRow}>
-        {shops.map((s) => (
-          <Pressable
-            key={s.id}
-            onPress={() => setSelectedShopId(s.id)}
-            style={[styles.chip, selectedShopId === s.id && styles.chipSelected]}
-          >
-            <Text style={selectedShopId === s.id ? styles.chipTextSelected : styles.chipText}>{s.name}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <View style={styles.timeRow}>
-        <Pressable style={styles.timeButton} onPress={() => setPickerTarget('start')}>
-          <Text style={styles.label}>{t('owner.schedule.startLabel')}</Text>
-          <Text>{startsAt.toLocaleString()}</Text>
-        </Pressable>
-        <Pressable style={styles.timeButton} onPress={() => setPickerTarget('end')}>
-          <Text style={styles.label}>{t('owner.schedule.endLabel')}</Text>
-          <Text>{endsAt.toLocaleString()}</Text>
-        </Pressable>
-      </View>
-
-      {pickerTarget ? (
-        <DateTimePicker
-          value={pickerTarget === 'start' ? startsAt : endsAt}
-          mode="datetime"
-          onChange={(_event, date) => {
-            if (date) {
-              pickerTarget === 'start' ? setStartsAt(date) : setEndsAt(date);
-            }
-            setPickerTarget(null);
-          }}
-        />
-      ) : null}
-
-      <Pressable style={styles.addButton} onPress={handleCreate}>
-        <Text style={styles.addButtonText}>{t('owner.schedule.addToRota')}</Text>
-      </Pressable>
-
-      <Text style={styles.title}>{t('owner.schedule.upcoming')}</Text>
-      <FlatList
-        data={schedule}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>{t('owner.schedule.nothingScheduled')}</Text>}
-        renderItem={({ item }) => {
-          const s = staff.find((st) => st.id === item.staffId);
-          return (
-            <View style={styles.row}>
+          <SectionLabel>{t('owner.schedule.upcoming')}</SectionLabel>
+        </View>
+      }
+      ListEmptyComponent={<Text style={styles.empty}>{t('owner.schedule.nothingScheduled')}</Text>}
+      renderItem={({ item }) => {
+        const s = staff.find((st) => st.id === item.staffId);
+        return (
+          <View style={styles.row}>
+            <Avatar id={item.staffId} name={s?.fullName ?? '?'} size={36} />
+            <View style={{ flex: 1 }}>
               <Text style={styles.name}>{s?.fullName ?? t('common.unknown')}</Text>
               <Text style={styles.since}>
                 {new Date(item.startsAt).toLocaleString()} – {new Date(item.endsAt).toLocaleTimeString()}
               </Text>
             </View>
-          );
-        }}
-      />
-    </View>
+          </View>
+        );
+      }}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 12 },
-  title: { fontSize: 22, fontWeight: '700', marginTop: 8 },
-  label: { color: '#888', fontSize: 12 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
-  chipSelected: { backgroundColor: '#111', borderColor: '#111' },
-  chipText: { color: '#111' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  listContent: { padding: spacing.lg, gap: spacing.xs },
+  formCard: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.sm, marginBottom: spacing.md, ...shadow },
+  title: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.xs },
+  label: { color: colors.textMuted, fontSize: 12 },
+  timeValue: { color: colors.textPrimary },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, paddingVertical: 6, paddingHorizontal: 12 },
+  chipSelected: { backgroundColor: colors.brand, borderColor: colors.brand },
+  chipText: { color: colors.textPrimary },
   chipTextSelected: { color: '#fff' },
-  timeRow: { flexDirection: 'row', gap: 12 },
-  timeButton: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  addButton: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center' },
-  addButtonText: { color: '#fff', fontWeight: '600' },
-  empty: { color: '#888' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  name: { fontWeight: '600' },
-  since: { color: '#888' },
+  timeRow: { flexDirection: 'row', gap: spacing.md },
+  timeButton: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, padding: spacing.md },
+  addButton: { backgroundColor: colors.brand, borderRadius: radii.sm, padding: spacing.md, alignItems: 'center' },
+  addButtonText: { color: '#fff', fontWeight: '700' },
+  empty: { color: colors.textMuted },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.xs, ...shadow },
+  name: { fontWeight: '700', color: colors.textPrimary },
+  since: { color: colors.textMuted, fontSize: 12, fontFamily: 'monospace' },
 });

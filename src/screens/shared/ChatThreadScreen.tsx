@@ -3,6 +3,7 @@ import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, 
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { colors, radii, spacing } from '../../theme';
 import type { ChatMessage } from '../../types';
 
 interface Props {
@@ -95,15 +96,15 @@ export default function ChatThreadScreen({ ownerId, staffId }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  list: { padding: 16, gap: 8 },
-  bubble: { maxWidth: '80%', borderRadius: 12, padding: 10, marginBottom: 4 },
-  bubbleMine: { backgroundColor: '#111', alignSelf: 'flex-end' },
-  bubbleTheirs: { backgroundColor: '#eee', alignSelf: 'flex-start' },
-  bubbleText: { color: '#111' },
+  container: { flex: 1, backgroundColor: colors.background },
+  list: { padding: spacing.lg, gap: spacing.sm },
+  bubble: { maxWidth: '80%', borderRadius: radii.md, padding: spacing.md, marginBottom: 4 },
+  bubbleMine: { backgroundColor: colors.brand, alignSelf: 'flex-end' },
+  bubbleTheirs: { backgroundColor: colors.surface, alignSelf: 'flex-start' },
+  bubbleText: { color: colors.textPrimary },
   bubbleTextMine: { color: '#fff' },
-  inputRow: { flexDirection: 'row', padding: 12, gap: 8, borderTopWidth: 1, borderTopColor: '#eee' },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
-  sendButton: { backgroundColor: '#111', borderRadius: 999, paddingHorizontal: 16, justifyContent: 'center' },
-  sendButtonText: { color: '#fff', fontWeight: '600' },
+  inputRow: { flexDirection: 'row', padding: spacing.md, gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
+  input: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, color: colors.textPrimary },
+  sendButton: { backgroundColor: colors.brand, borderRadius: radii.pill, paddingHorizontal: spacing.lg, justifyContent: 'center' },
+  sendButtonText: { color: '#fff', fontWeight: '700' },
 });

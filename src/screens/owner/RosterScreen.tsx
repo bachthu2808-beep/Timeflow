@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { formatCurrency } from '../../lib/currency';
+import Avatar from '../../components/Avatar';
+import SectionLabel from '../../components/SectionLabel';
+import { colors, radii, shadow, spacing } from '../../theme';
 import type { PayBasis, Profile, StaffInvitation } from '../../types';
 
 export default function RosterScreen() {
@@ -10,10 +14,13 @@ export default function RosterScreen() {
   const { profile } = useAuth();
   const [staff, setStaff] = useState<Profile[]>([]);
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
-  const [formOpen, setFormOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [inviteFormOpen, setInviteFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Profile | null>(null);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
   const [payBasis, setPayBasis] = useState<PayBasis>('hourly');
   const [rate, setRate] = useState('');
   const [lunchAllowance, setLunchAllowance] = useState('0');
@@ -77,12 +84,31 @@ export default function RosterScreen() {
     load();
   }, [profile]);
 
-  function resetForm() {
+  const filteredStaff = useMemo(() => {
+    if (!query.trim()) return staff;
+    const q = query.trim().toLowerCase();
+    return staff.filter((s) => s.fullName.toLowerCase().includes(q));
+  }, [staff, query]);
+
+  function resetInviteForm() {
     setFullName('');
     setEmail('');
+    setJobTitle('');
     setPayBasis('hourly');
     setRate('');
     setLunchAllowance('0');
+  }
+
+  function openInviteForm() {
+    resetInviteForm();
+    setInviteFormOpen(true);
+  }
+
+  function openEditForm(person: Profile) {
+    setEditing(person);
+    setJobTitle(person.jobTitle ?? '');
+    setPayBasis(person.payBasis);
+    setRate(String(person.payBasis === 'hourly' ? person.hourlyRate ?? '' : person.monthlyRate ?? ''));
   }
 
   async function sendInvite() {
@@ -105,6 +131,7 @@ export default function RosterScreen() {
         owner_id: profile.id,
         email: email.trim().toLowerCase(),
         full_name: fullName.trim(),
+        job_title: jobTitle.trim() || null,
         pay_basis: payBasis,
         hourly_rate: payBasis === 'hourly' ? parseFloat(rate) : null,
         monthly_rate: payBasis === 'monthly' ? parseFloat(rate) : null,
@@ -117,8 +144,7 @@ export default function RosterScreen() {
         return;
       }
 
-      resetForm();
-      setFormOpen(false);
+      setInviteFormOpen(false);
       load();
       Alert.alert(t('owner.roster.invitedTitle'), t('owner.roster.invitedMessage', { fullName, email }));
     } finally {
@@ -126,50 +152,93 @@ export default function RosterScreen() {
     }
   }
 
+  async function savePayEdit() {
+    if (!editing) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          job_title: jobTitle.trim() || null,
+          pay_basis: payBasis,
+          hourly_rate: payBasis === 'hourly' ? parseFloat(rate) || 0 : null,
+          monthly_rate: payBasis === 'monthly' ? parseFloat(rate) || 0 : null,
+        })
+        .eq('id', editing.id);
+
+      if (error) {
+        Alert.alert(t('common.failedToSaveTitle'), error.message);
+        return;
+      }
+
+      setEditing(null);
+      load();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
-    <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{t('owner.roster.title')}</Text>
-        <Pressable style={styles.inviteButton} onPress={() => setFormOpen(true)}>
-          <Text style={styles.inviteButtonText}>{t('owner.roster.inviteStaff')}</Text>
+    <View style={styles.screen}>
+      <View style={styles.topRow}>
+        <View style={styles.searchBox}>
+          <Text style={styles.searchIcon}>⌕</Text>
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t('owner.roster.searchPlaceholder', { count: staff.length })}
+            placeholderTextColor={colors.textMuted}
+          />
+        </View>
+        <Pressable style={styles.addButton} onPress={openInviteForm}>
+          <Text style={styles.addButtonText}>{t('owner.roster.add')}</Text>
         </Pressable>
       </View>
 
       <FlatList
-        data={staff}
+        data={filteredStaff}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={<SectionLabel>{t('owner.roster.staffCount', { count: filteredStaff.length })}</SectionLabel>}
         ListEmptyComponent={<Text style={styles.empty}>{t('owner.roster.noStaffYet')}</Text>}
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text style={styles.name}>{item.fullName}</Text>
-            <Text style={styles.rate}>
-              {item.payBasis === 'hourly'
-                ? t('owner.roster.hourlyRate', { rate: item.hourlyRate ?? 0 })
-                : t('owner.roster.monthlyRate', { rate: item.monthlyRate ?? 0 })}
-            </Text>
-          </View>
+          <Pressable style={styles.card} onPress={() => openEditForm(item)}>
+            <Avatar id={item.id} name={item.fullName} size={44} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{item.fullName}</Text>
+              <Text style={styles.meta}>{item.jobTitle ?? t('owner.roster.noJobTitle')}</Text>
+            </View>
+            <View style={styles.rateBlock}>
+              <Text style={styles.rate}>
+                {formatCurrency(item.payBasis === 'hourly' ? item.hourlyRate ?? 0 : item.monthlyRate ?? 0)}
+                {item.payBasis === 'hourly' ? t('owner.roster.perHour') : t('owner.roster.perMonth')}
+              </Text>
+              <Text style={styles.tapToEdit}>{t('owner.roster.tapToEditPay')}</Text>
+            </View>
+          </Pressable>
         )}
+        ListFooterComponent={
+          invitations.length > 0 ? (
+            <>
+              <SectionLabel>{t('owner.roster.pendingInvitations')}</SectionLabel>
+              {invitations.map((item) => (
+                <View key={item.id} style={styles.card}>
+                  <Avatar id={item.id} name={item.fullName} size={44} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name}>{item.fullName}</Text>
+                    <Text style={styles.meta}>{item.email}</Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          ) : null
+        }
       />
 
-      {invitations.length > 0 ? (
-        <>
-          <Text style={styles.subtitle}>{t('owner.roster.pendingInvitations')}</Text>
-          <FlatList
-            data={invitations}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.row}>
-                <Text style={styles.name}>{item.fullName}</Text>
-                <Text style={styles.rate}>{item.email}</Text>
-              </View>
-            )}
-          />
-        </>
-      ) : null}
-
-      <Modal visible={formOpen} animationType="slide" onRequestClose={() => setFormOpen(false)}>
+      <Modal visible={inviteFormOpen} animationType="slide" onRequestClose={() => setInviteFormOpen(false)}>
         <ScrollView contentContainerStyle={styles.formContainer}>
-          <Text style={styles.title}>{t('owner.roster.inviteStaff')}</Text>
+          <Text style={styles.formTitle}>{t('owner.roster.inviteStaff')}</Text>
           <TextInput style={styles.input} placeholder={t('owner.roster.fullNamePlaceholder')} value={fullName} onChangeText={setFullName} />
           <TextInput
             style={styles.input}
@@ -179,20 +248,8 @@ export default function RosterScreen() {
             value={email}
             onChangeText={setEmail}
           />
-          <View style={styles.chipRow}>
-            <Pressable
-              style={[styles.chip, payBasis === 'hourly' && styles.chipSelected]}
-              onPress={() => setPayBasis('hourly')}
-            >
-              <Text style={payBasis === 'hourly' ? styles.chipTextSelected : styles.chipText}>{t('common.hourly')}</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.chip, payBasis === 'monthly' && styles.chipSelected]}
-              onPress={() => setPayBasis('monthly')}
-            >
-              <Text style={payBasis === 'monthly' ? styles.chipTextSelected : styles.chipText}>{t('common.monthly')}</Text>
-            </Pressable>
-          </View>
+          <TextInput style={styles.input} placeholder={t('owner.roster.jobTitlePlaceholder')} value={jobTitle} onChangeText={setJobTitle} />
+          <PayBasisChips payBasis={payBasis} setPayBasis={setPayBasis} t={t} />
           <TextInput
             style={styles.input}
             placeholder={payBasis === 'hourly' ? t('owner.roster.hourlyRatePlaceholder') : t('owner.roster.monthlyRatePlaceholder')}
@@ -210,7 +267,28 @@ export default function RosterScreen() {
           <Pressable style={styles.saveButton} onPress={sendInvite} disabled={submitting}>
             <Text style={styles.saveButtonText}>{submitting ? t('owner.roster.sending') : t('owner.roster.sendInvitation')}</Text>
           </Pressable>
-          <Pressable onPress={() => setFormOpen(false)}>
+          <Pressable onPress={() => setInviteFormOpen(false)}>
+            <Text style={styles.cancel}>{t('common.cancel')}</Text>
+          </Pressable>
+        </ScrollView>
+      </Modal>
+
+      <Modal visible={!!editing} animationType="slide" onRequestClose={() => setEditing(null)}>
+        <ScrollView contentContainerStyle={styles.formContainer}>
+          <Text style={styles.formTitle}>{editing?.fullName}</Text>
+          <TextInput style={styles.input} placeholder={t('owner.roster.jobTitlePlaceholder')} value={jobTitle} onChangeText={setJobTitle} />
+          <PayBasisChips payBasis={payBasis} setPayBasis={setPayBasis} t={t} />
+          <TextInput
+            style={styles.input}
+            placeholder={payBasis === 'hourly' ? t('owner.roster.hourlyRatePlaceholder') : t('owner.roster.monthlyRatePlaceholder')}
+            keyboardType="decimal-pad"
+            value={rate}
+            onChangeText={setRate}
+          />
+          <Pressable style={styles.saveButton} onPress={savePayEdit} disabled={submitting}>
+            <Text style={styles.saveButtonText}>{submitting ? t('common.saving') : t('common.save')}</Text>
+          </Pressable>
+          <Pressable onPress={() => setEditing(null)}>
             <Text style={styles.cancel}>{t('common.cancel')}</Text>
           </Pressable>
         </ScrollView>
@@ -219,25 +297,52 @@ export default function RosterScreen() {
   );
 }
 
+function PayBasisChips({
+  payBasis,
+  setPayBasis,
+  t,
+}: {
+  payBasis: PayBasis;
+  setPayBasis: (b: PayBasis) => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <View style={styles.chipRow}>
+      <Pressable style={[styles.chip, payBasis === 'hourly' && styles.chipSelected]} onPress={() => setPayBasis('hourly')}>
+        <Text style={payBasis === 'hourly' ? styles.chipTextSelected : styles.chipText}>{t('common.hourly')}</Text>
+      </Pressable>
+      <Pressable style={[styles.chip, payBasis === 'monthly' && styles.chipSelected]} onPress={() => setPayBasis('monthly')}>
+        <Text style={payBasis === 'monthly' ? styles.chipTextSelected : styles.chipText}>{t('common.monthly')}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 16 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 22, fontWeight: '700' },
-  subtitle: { fontSize: 16, fontWeight: '600', marginTop: 16, color: '#888' },
-  empty: { color: '#888', marginTop: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  name: { fontWeight: '600' },
-  rate: { color: '#888' },
-  inviteButton: { backgroundColor: '#111', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14 },
-  inviteButtonText: { color: '#fff', fontWeight: '600' },
-  formContainer: { padding: 24, gap: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 16 },
-  chipRow: { flexDirection: 'row', gap: 8 },
-  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
-  chipSelected: { backgroundColor: '#111', borderColor: '#111' },
-  chipText: { color: '#111' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  topRow: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, paddingBottom: spacing.sm },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radii.pill, paddingHorizontal: spacing.md, ...shadow },
+  searchIcon: { color: colors.textMuted, marginRight: spacing.xs },
+  searchInput: { flex: 1, paddingVertical: 12, color: colors.textPrimary },
+  addButton: { backgroundColor: colors.brand, borderRadius: radii.pill, paddingHorizontal: spacing.lg, justifyContent: 'center' },
+  addButtonText: { color: '#fff', fontWeight: '700' },
+  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm },
+  empty: { color: colors.textMuted, marginTop: spacing.sm },
+  card: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginVertical: 4, ...shadow },
+  name: { fontWeight: '700', fontSize: 15, color: colors.textPrimary },
+  meta: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  rateBlock: { alignItems: 'flex-end' },
+  rate: { fontWeight: '700', color: colors.brand, fontFamily: 'monospace' },
+  tapToEdit: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  formContainer: { padding: spacing.xl, gap: spacing.md },
+  formTitle: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
+  input: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, padding: spacing.md, fontSize: 16, color: colors.textPrimary },
+  chipRow: { flexDirection: 'row', gap: spacing.sm },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 14 },
+  chipSelected: { backgroundColor: colors.brand, borderColor: colors.brand },
+  chipText: { color: colors.textPrimary },
   chipTextSelected: { color: '#fff' },
-  saveButton: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 12 },
-  saveButtonText: { color: '#fff', fontWeight: '600' },
-  cancel: { color: '#888', textAlign: 'center', marginTop: 8 },
+  saveButton: { backgroundColor: colors.brand, borderRadius: radii.sm, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  saveButtonText: { color: '#fff', fontWeight: '700' },
+  cancel: { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm },
 });

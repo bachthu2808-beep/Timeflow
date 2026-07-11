@@ -102,6 +102,14 @@
     },
     "roster": {
       "title": "Staff roster",
+      "add": "+ Add",
+      "searchPlaceholder": "Search {{count}} staff…",
+      "staffCount": "STAFF · {{count}}",
+      "noJobTitle": "No job title set",
+      "perHour": "/hr",
+      "perMonth": "/mo",
+      "tapToEditPay": "tap to edit pay",
+      "jobTitlePlaceholder": "Job title (e.g. Barista)",
       "inviteStaff": "Invite staff",
       "noStaffYet": "No staff added yet.",
       "pendingInvitations": "Pending invitations",
@@ -114,9 +122,7 @@
       "monthlyRatePlaceholder": "Monthly rate",
       "lunchAllowancePlaceholder": "Lunch allowance per shift",
       "sending": "Sending…",
-      "sendInvitation": "Send invitation",
-      "hourlyRate": "${{rate}}/hr",
-      "monthlyRate": "${{rate}}/mo"
+      "sendInvitation": "Send invitation"
     },
     "schedule": {
       "buildRota": "Build the rota",
@@ -143,10 +149,14 @@
       "title": "Payroll runs",
       "running": "Running…",
       "runButton": "Run payroll & export CSV",
+      "exportButton": "Export payroll (This week)",
       "noRunsYet": "No payroll runs yet.",
+      "noStaffYet": "No staff added yet.",
       "noStaffTitle": "No staff",
       "noStaffMessage": "Add staff to the roster before running payroll.",
       "exportDialogTitle": "Payroll export",
+      "shiftsAndHours_one": "{{shifts}} shift · {{hours}}h",
+      "shiftsAndHours_other": "{{shifts}} shifts · {{hours}}h",
       "status": {
         "open": "open",
         "processing": "processing",
