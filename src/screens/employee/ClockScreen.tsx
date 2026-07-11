@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import NetInfo from '@react-native-community/netinfo';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { isWithinGeofence } from '../../lib/geofence';
@@ -28,6 +29,7 @@ async function uploadClockInPhoto(staffId: string, uri: string): Promise<string 
 }
 
 export default function ClockScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
   const [activeShift, setActiveShift] = useState<ShiftRecord | null>(null);
@@ -58,6 +60,7 @@ export default function ClockScreen() {
           longitude: data.longitude,
           geofenceRadiusMeters: data.geofence_radius_meters,
           dailyLaborBudget: data.daily_labor_budget,
+          isOpen: data.is_open,
         });
       });
   }, [profile?.defaultShopId]);
@@ -96,13 +99,13 @@ export default function ClockScreen() {
     if (!profile) return;
 
     if (!shop) {
-      Alert.alert('No shop assigned', "Ask your owner to set your default shop before clocking in.");
+      Alert.alert(t('employee.clock.noShopTitle'), t('employee.clock.noShopMessage'));
       return;
     }
 
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Location required', 'TimeFlow needs location access to verify you are at the shop.');
+      Alert.alert(t('owner.shop.locationRequiredTitle'), t('employee.clock.locationRequiredMessage'));
       return;
     }
 
@@ -116,7 +119,7 @@ export default function ClockScreen() {
       );
 
       if (!withinRange) {
-        Alert.alert('Out of range', "You're not close enough to the shop to clock in.");
+        Alert.alert(t('employee.clock.outOfRangeTitle'), t('employee.clock.outOfRangeMessage'));
         return;
       }
 
@@ -174,7 +177,7 @@ export default function ClockScreen() {
           mockedLocation,
           clockInPhotoUrl: null,
         });
-        Alert.alert('Saved offline', "You're clocked in. This will sync once you're back online.");
+        Alert.alert(t('employee.clock.savedOfflineTitle'), t('employee.clock.savedOfflineMessage'));
         return;
       }
 
@@ -246,22 +249,22 @@ export default function ClockScreen() {
 
   return (
     <View style={styles.container}>
-      {streak > 1 ? <Text style={styles.streak}>🔥 {streak}-day on-time streak</Text> : null}
-      {pendingCount > 0 ? <Text style={styles.pending}>{pendingCount} action(s) waiting to sync</Text> : null}
+      {streak > 1 ? <Text style={styles.streak}>{t('employee.clock.streak', { count: streak })}</Text> : null}
+      {pendingCount > 0 ? <Text style={styles.pending}>{t('employee.clock.pendingSync', { count: pendingCount })}</Text> : null}
 
       {activeShift ? (
         <>
-          <Text style={styles.label}>Currently clocked in</Text>
+          <Text style={styles.label}>{t('employee.clock.currentlyClockedIn')}</Text>
           <Text style={styles.earnings}>${livePay?.totalPay.toFixed(2) ?? '0.00'}</Text>
           <Pressable style={[styles.button, styles.buttonDanger]} onPress={handleClockOut} disabled={busy}>
-            <Text style={styles.buttonText}>Clock out</Text>
+            <Text style={styles.buttonText}>{t('employee.clock.clockOut')}</Text>
           </Pressable>
         </>
       ) : (
         <>
-          <Text style={styles.label}>You are not clocked in</Text>
+          <Text style={styles.label}>{t('employee.clock.notClockedIn')}</Text>
           <Pressable style={styles.button} onPress={handleClockIn} disabled={busy}>
-            <Text style={styles.buttonText}>Clock in</Text>
+            <Text style={styles.buttonText}>{t('employee.clock.clockIn')}</Text>
           </Pressable>
         </>
       )}

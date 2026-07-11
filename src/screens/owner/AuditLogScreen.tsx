@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { AuditLogEntry } from '../../types';
 
+const KNOWN_ACTIONS = ['shift_clock_in', 'shift_updated', 'approval_requested', 'approval_approved', 'approval_denied'];
+
 export default function AuditLogScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [entries, setEntries] = useState<AuditLogEntry[]>([]);
 
@@ -36,17 +40,17 @@ export default function AuditLogScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Audit log</Text>
-      <Text style={styles.subtitle}>
-        Every clock-in/out and approval decision, recorded automatically for dispute resolution.
-      </Text>
+      <Text style={styles.title}>{t('owner.auditLog.title')}</Text>
+      <Text style={styles.subtitle}>{t('owner.auditLog.subtitle')}</Text>
       <FlatList
         data={entries}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>No activity yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('owner.auditLog.noActivity')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Text style={styles.action}>{item.action.replace(/_/g, ' ')}</Text>
+            <Text style={styles.action}>
+              {KNOWN_ACTIONS.includes(item.action) ? t(`owner.auditLog.actions.${item.action}`) : item.action.replace(/_/g, ' ')}
+            </Text>
             <Text style={styles.time}>{new Date(item.createdAt).toLocaleString()}</Text>
           </View>
         )}

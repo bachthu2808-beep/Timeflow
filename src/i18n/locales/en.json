@@ -1,0 +1,223 @@
+{
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "savedTitle": "Saved",
+    "cancel": "Cancel",
+    "approve": "Approve",
+    "deny": "Deny",
+    "accept": "Accept",
+    "unknown": "Unknown",
+    "loading": "Loading…",
+    "hourly": "Hourly",
+    "monthly": "Monthly",
+    "missingInfoTitle": "Missing info",
+    "failedTitle": "Failed",
+    "failedToSaveTitle": "Failed to save"
+  },
+  "auth": {
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "login": {
+      "signIn": "Sign in",
+      "signUpLink": "New here? Create an account"
+    },
+    "signup": {
+      "title": "Create your account",
+      "modeOwner": "I'm the owner",
+      "modeEmployee": "I'm joining a shop",
+      "employeeHint": "Your owner needs to invite you by email first (Roster → Invite staff) before you can sign up here.",
+      "fullNamePlaceholder": "Full name",
+      "createAccount": "Create account",
+      "backToSignIn": "Already have an account? Sign in",
+      "validationError": "Enter your name, email, and a password of at least 6 characters.",
+      "signUpFailed": "Sign up failed.",
+      "noInvitation": "No pending invitation found for this email. Ask your owner to invite you first."
+    }
+  },
+  "nav": {
+    "owner": {
+      "dashboard": "Dashboard",
+      "shop": "Shop",
+      "schedule": "Schedule",
+      "roster": "Roster",
+      "approvals": "Approvals",
+      "payroll": "Payroll",
+      "chat": "Chat",
+      "auditLog": "Audit Log"
+    },
+    "employee": {
+      "clock": "Clock",
+      "schedule": "Schedule",
+      "payslip": "Payslip",
+      "history": "History",
+      "chat": "Chat"
+    }
+  },
+  "owner": {
+    "dashboard": {
+      "goodMorning": "Good morning",
+      "goodAfternoon": "Good afternoon",
+      "goodEvening": "Good evening",
+      "storeOpen": "Store open",
+      "storeClosed": "Store closed",
+      "present": "Present",
+      "clockedIn": "clocked in",
+      "absent": "Absent",
+      "unplanned": "unplanned",
+      "late": "Late",
+      "pastGrace": "past grace",
+      "onLeave": "On leave",
+      "approved": "approved",
+      "laborCostToday": "Labor cost · today",
+      "percentOfBudget": "{{percent}}% of budget",
+      "shiftsLogged_one": "{{count}} shift logged",
+      "shiftsLogged_other": "{{count}} shifts logged",
+      "budgetAmount": "Budget {{amount}}",
+      "laborCostWeek": "Labor cost · this week",
+      "pendingApprovals": "Pending approvals",
+      "pendingApprovalsSubtitle": "Leave, overtime & correction requests",
+      "onShift": "On shift · {{count}}",
+      "lateTag": "Late",
+      "onTimeTag": "On time",
+      "noOneClockedIn": "No one is currently clocked in.",
+      "since": "since {{time}}"
+    },
+    "shop": {
+      "settingsTitle": "Shop settings",
+      "setupTitle": "Set up your shop",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Riverside Cafe",
+      "radiusLabel": "Geofence radius (meters)",
+      "budgetLabel": "Daily labor budget (optional, for the alert banner)",
+      "budgetPlaceholder": "e.g. 200",
+      "openLabel": "Open",
+      "locationLabel": "Location",
+      "locationNotSet": "Not set yet",
+      "useCurrentLocation": "Use my current location",
+      "locationRequiredTitle": "Location required",
+      "locationRequiredMessage": "Allow location access to set the shop as your current position.",
+      "missingInfoMessage": "Enter a name and set the shop location first.",
+      "savedMessage": "Shop settings updated."
+    },
+    "roster": {
+      "title": "Staff roster",
+      "inviteStaff": "Invite staff",
+      "noStaffYet": "No staff added yet.",
+      "pendingInvitations": "Pending invitations",
+      "missingInfoMessage": "Fill in name, email, and pay rate.",
+      "failedToInviteTitle": "Failed to invite",
+      "invitedTitle": "Invited",
+      "invitedMessage": "{{fullName}} can now sign up in the app with {{email}} to join your roster.",
+      "fullNamePlaceholder": "Full name",
+      "hourlyRatePlaceholder": "Hourly rate",
+      "monthlyRatePlaceholder": "Monthly rate",
+      "lunchAllowancePlaceholder": "Lunch allowance per shift",
+      "sending": "Sending…",
+      "sendInvitation": "Send invitation",
+      "hourlyRate": "${{rate}}/hr",
+      "monthlyRate": "${{rate}}/mo"
+    },
+    "schedule": {
+      "buildRota": "Build the rota",
+      "staffLabel": "Staff",
+      "shopLabel": "Shop",
+      "startLabel": "Start",
+      "endLabel": "End",
+      "addToRota": "Add to rota",
+      "upcoming": "Upcoming",
+      "nothingScheduled": "Nothing scheduled yet.",
+      "missingInfoMessage": "Pick a staff member and a shop first.",
+      "failedToAddTitle": "Failed to add shift"
+    },
+    "approvals": {
+      "pendingRequests": "Pending requests",
+      "nothingPending": "Nothing pending.",
+      "timeOff": "Time off",
+      "scheduleChange": "Schedule change",
+      "swapsAwaitingOk": "Shift swaps awaiting your OK",
+      "nonePending": "None pending.",
+      "coworkerAccepted": "A coworker accepted a shift swap"
+    },
+    "payroll": {
+      "title": "Payroll runs",
+      "running": "Running…",
+      "runButton": "Run payroll & export CSV",
+      "noRunsYet": "No payroll runs yet.",
+      "noStaffTitle": "No staff",
+      "noStaffMessage": "Add staff to the roster before running payroll.",
+      "exportDialogTitle": "Payroll export",
+      "status": {
+        "open": "open",
+        "processing": "processing",
+        "paid": "paid"
+      }
+    },
+    "chatList": {
+      "staffTitle": "Staff",
+      "noStaffToMessage": "No staff to message yet."
+    },
+    "auditLog": {
+      "title": "Audit log",
+      "subtitle": "Every clock-in/out and approval decision, recorded automatically for dispute resolution.",
+      "noActivity": "No activity yet.",
+      "actions": {
+        "shift_clock_in": "Clocked in",
+        "shift_updated": "Shift updated",
+        "approval_requested": "Approval requested",
+        "approval_approved": "Approval approved",
+        "approval_denied": "Approval denied"
+      }
+    }
+  },
+  "employee": {
+    "clock": {
+      "currentlyClockedIn": "Currently clocked in",
+      "notClockedIn": "You are not clocked in",
+      "clockIn": "Clock in",
+      "clockOut": "Clock out",
+      "noShopTitle": "No shop assigned",
+      "noShopMessage": "Ask your owner to set your default shop before clocking in.",
+      "locationRequiredMessage": "bt28staff needs location access to verify you are at the shop.",
+      "outOfRangeTitle": "Out of range",
+      "outOfRangeMessage": "You're not close enough to the shop to clock in.",
+      "savedOfflineTitle": "Saved offline",
+      "savedOfflineMessage": "You're clocked in. This will sync once you're back online.",
+      "streak": "🔥 {{count}}-day on-time streak",
+      "pendingSync_one": "{{count}} action waiting to sync",
+      "pendingSync_other": "{{count}} actions waiting to sync"
+    },
+    "schedule": {
+      "upcomingShifts": "Your upcoming shifts",
+      "offerSwap": "Offer swap",
+      "offeredTitle": "Offered",
+      "offeredMessage": "Your shift is now open for a coworker to pick up, pending owner approval.",
+      "openSwaps": "Open swaps from coworkers",
+      "noOpenSwaps": "No open swaps right now.",
+      "swapRequest": "Swap request"
+    },
+    "payslip": {
+      "title": "Payslip",
+      "regularPay": "Regular pay",
+      "overtimePay": "Overtime pay",
+      "holidayPay": "Holiday pay",
+      "lunchAllowance": "Lunch allowance",
+      "total": "Total",
+      "exportPdf": "Export PDF",
+      "range": {
+        "today": "today",
+        "week": "week",
+        "month": "month"
+      }
+    },
+    "history": {
+      "title": "Attendance history",
+      "noShiftsYet": "No shifts yet.",
+      "active": "active"
+    }
+  },
+  "chat": {
+    "messagePlaceholder": "Message…",
+    "send": "Send"
+  }
+}

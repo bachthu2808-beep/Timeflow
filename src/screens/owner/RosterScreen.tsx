@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { PayBasis, Profile, StaffInvitation } from '../../types';
 
 export default function RosterScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [staff, setStaff] = useState<Profile[]>([]);
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
@@ -33,6 +35,7 @@ export default function RosterScreen() {
           ownerId: row.owner_id,
           role: row.role,
           fullName: row.full_name,
+          jobTitle: row.job_title,
           payBasis: row.pay_basis,
           hourlyRate: row.hourly_rate,
           monthlyRate: row.monthly_rate,
@@ -57,6 +60,7 @@ export default function RosterScreen() {
           ownerId: row.owner_id,
           email: row.email,
           fullName: row.full_name,
+          jobTitle: row.job_title,
           payBasis: row.pay_basis,
           hourlyRate: row.hourly_rate,
           monthlyRate: row.monthly_rate,
@@ -84,7 +88,7 @@ export default function RosterScreen() {
   async function sendInvite() {
     if (!profile) return;
     if (!fullName.trim() || !email.trim() || !rate.trim()) {
-      Alert.alert('Missing info', 'Fill in name, email, and pay rate.');
+      Alert.alert(t('common.missingInfoTitle'), t('owner.roster.missingInfoMessage'));
       return;
     }
 
@@ -109,14 +113,14 @@ export default function RosterScreen() {
       });
 
       if (error) {
-        Alert.alert('Failed to invite', error.message);
+        Alert.alert(t('owner.roster.failedToInviteTitle'), error.message);
         return;
       }
 
       resetForm();
       setFormOpen(false);
       load();
-      Alert.alert('Invited', `${fullName} can now sign up in the app with ${email} to join your roster.`);
+      Alert.alert(t('owner.roster.invitedTitle'), t('owner.roster.invitedMessage', { fullName, email }));
     } finally {
       setSubmitting(false);
     }
@@ -125,21 +129,23 @@ export default function RosterScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Staff roster</Text>
+        <Text style={styles.title}>{t('owner.roster.title')}</Text>
         <Pressable style={styles.inviteButton} onPress={() => setFormOpen(true)}>
-          <Text style={styles.inviteButtonText}>Invite staff</Text>
+          <Text style={styles.inviteButtonText}>{t('owner.roster.inviteStaff')}</Text>
         </Pressable>
       </View>
 
       <FlatList
         data={staff}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>No staff added yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('owner.roster.noStaffYet')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.name}>{item.fullName}</Text>
             <Text style={styles.rate}>
-              {item.payBasis === 'hourly' ? `$${item.hourlyRate ?? 0}/hr` : `$${item.monthlyRate ?? 0}/mo`}
+              {item.payBasis === 'hourly'
+                ? t('owner.roster.hourlyRate', { rate: item.hourlyRate ?? 0 })
+                : t('owner.roster.monthlyRate', { rate: item.monthlyRate ?? 0 })}
             </Text>
           </View>
         )}
@@ -147,7 +153,7 @@ export default function RosterScreen() {
 
       {invitations.length > 0 ? (
         <>
-          <Text style={styles.subtitle}>Pending invitations</Text>
+          <Text style={styles.subtitle}>{t('owner.roster.pendingInvitations')}</Text>
           <FlatList
             data={invitations}
             keyExtractor={(item) => item.id}
@@ -163,11 +169,11 @@ export default function RosterScreen() {
 
       <Modal visible={formOpen} animationType="slide" onRequestClose={() => setFormOpen(false)}>
         <ScrollView contentContainerStyle={styles.formContainer}>
-          <Text style={styles.title}>Invite staff</Text>
-          <TextInput style={styles.input} placeholder="Full name" value={fullName} onChangeText={setFullName} />
+          <Text style={styles.title}>{t('owner.roster.inviteStaff')}</Text>
+          <TextInput style={styles.input} placeholder={t('owner.roster.fullNamePlaceholder')} value={fullName} onChangeText={setFullName} />
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('auth.emailPlaceholder')}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -178,34 +184,34 @@ export default function RosterScreen() {
               style={[styles.chip, payBasis === 'hourly' && styles.chipSelected]}
               onPress={() => setPayBasis('hourly')}
             >
-              <Text style={payBasis === 'hourly' ? styles.chipTextSelected : styles.chipText}>Hourly</Text>
+              <Text style={payBasis === 'hourly' ? styles.chipTextSelected : styles.chipText}>{t('common.hourly')}</Text>
             </Pressable>
             <Pressable
               style={[styles.chip, payBasis === 'monthly' && styles.chipSelected]}
               onPress={() => setPayBasis('monthly')}
             >
-              <Text style={payBasis === 'monthly' ? styles.chipTextSelected : styles.chipText}>Monthly</Text>
+              <Text style={payBasis === 'monthly' ? styles.chipTextSelected : styles.chipText}>{t('common.monthly')}</Text>
             </Pressable>
           </View>
           <TextInput
             style={styles.input}
-            placeholder={payBasis === 'hourly' ? 'Hourly rate' : 'Monthly rate'}
+            placeholder={payBasis === 'hourly' ? t('owner.roster.hourlyRatePlaceholder') : t('owner.roster.monthlyRatePlaceholder')}
             keyboardType="decimal-pad"
             value={rate}
             onChangeText={setRate}
           />
           <TextInput
             style={styles.input}
-            placeholder="Lunch allowance per shift"
+            placeholder={t('owner.roster.lunchAllowancePlaceholder')}
             keyboardType="decimal-pad"
             value={lunchAllowance}
             onChangeText={setLunchAllowance}
           />
           <Pressable style={styles.saveButton} onPress={sendInvite} disabled={submitting}>
-            <Text style={styles.saveButtonText}>{submitting ? 'Sending…' : 'Send invitation'}</Text>
+            <Text style={styles.saveButtonText}>{submitting ? t('owner.roster.sending') : t('owner.roster.sendInvitation')}</Text>
           </Pressable>
           <Pressable onPress={() => setFormOpen(false)}>
-            <Text style={styles.cancel}>Cancel</Text>
+            <Text style={styles.cancel}>{t('common.cancel')}</Text>
           </Pressable>
         </ScrollView>
       </Modal>

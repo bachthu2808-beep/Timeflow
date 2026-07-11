@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { calculatePay } from '../../payroll/calculatePay';
@@ -25,6 +26,7 @@ function rangeStart(range: Range): Date {
 }
 
 export default function PayslipScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [range, setRange] = useState<Range>('week');
   const [result, setResult] = useState<PayResult | null>(null);
@@ -68,10 +70,10 @@ export default function PayslipScreen() {
 
   async function exportPdf() {
     if (!result || !profile) return;
-    const html = buildPayslipHtml({ staffName: profile.fullName, rangeLabel: range, result });
+    const html = buildPayslipHtml({ staffName: profile.fullName, rangeLabel: t(`employee.payslip.range.${range}`), result });
     const { uri } = await Print.printToFileAsync({ html });
     if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Payslip' });
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: t('employee.payslip.title') });
     }
   }
 
@@ -84,7 +86,7 @@ export default function PayslipScreen() {
             onPress={() => setRange(r)}
             style={[styles.tab, range === r && styles.tabActive]}
           >
-            {r}
+            {t(`employee.payslip.range.${r}`)}
           </Text>
         ))}
       </View>
@@ -92,18 +94,18 @@ export default function PayslipScreen() {
       {result ? (
         <>
           <View style={styles.breakdown}>
-            <Row label="Regular pay" value={result.regularPay} />
-            <Row label="Overtime pay" value={result.overtimePay} />
-            <Row label="Holiday pay" value={result.holidayPay} />
-            <Row label="Lunch allowance" value={result.lunchAllowance} />
-            <Row label="Total" value={result.totalPay} bold />
+            <Row label={t('employee.payslip.regularPay')} value={result.regularPay} />
+            <Row label={t('employee.payslip.overtimePay')} value={result.overtimePay} />
+            <Row label={t('employee.payslip.holidayPay')} value={result.holidayPay} />
+            <Row label={t('employee.payslip.lunchAllowance')} value={result.lunchAllowance} />
+            <Row label={t('employee.payslip.total')} value={result.totalPay} bold />
           </View>
           <Pressable style={styles.exportButton} onPress={exportPdf}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
+            <Text style={styles.exportButtonText}>{t('employee.payslip.exportPdf')}</Text>
           </Pressable>
         </>
       ) : (
-        <Text>Loading…</Text>
+        <Text>{t('common.loading')}</Text>
       )}
     </View>
   );

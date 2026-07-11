@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { ApprovalRequest, SwapRequest } from '../../types';
 
 export default function ApprovalsScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
   const [swaps, setSwaps] = useState<SwapRequest[]>([]);
@@ -71,7 +73,7 @@ export default function ApprovalsScreen() {
 
   async function respond(id: string, status: 'approved' | 'denied') {
     const { error } = await supabase.from('approval_requests').update({ status }).eq('id', id);
-    if (error) Alert.alert('Failed', error.message);
+    if (error) Alert.alert(t('common.failedTitle'), error.message);
   }
 
   async function respondToSwap(swap: SwapRequest, approve: boolean) {
@@ -81,7 +83,7 @@ export default function ApprovalsScreen() {
         .update({ staff_id: swap.acceptedByStaffId })
         .eq('id', swap.scheduleId);
       if (scheduleError) {
-        Alert.alert('Failed', scheduleError.message);
+        Alert.alert(t('common.failedTitle'), scheduleError.message);
         return;
       }
     }
@@ -90,46 +92,46 @@ export default function ApprovalsScreen() {
       .from('swap_requests')
       .update({ status: approve ? 'owner_approved' : 'denied' })
       .eq('id', swap.id);
-    if (error) Alert.alert('Failed', error.message);
+    if (error) Alert.alert(t('common.failedTitle'), error.message);
     else load();
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pending requests</Text>
+      <Text style={styles.title}>{t('owner.approvals.pendingRequests')}</Text>
       <FlatList
         data={requests}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>Nothing pending.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('owner.approvals.nothingPending')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.kind}>{item.kind === 'time_off' ? 'Time off' : 'Schedule change'}</Text>
+              <Text style={styles.kind}>{item.kind === 'time_off' ? t('owner.approvals.timeOff') : t('owner.approvals.scheduleChange')}</Text>
               <Text style={styles.note}>{item.note ?? ''}</Text>
             </View>
             <Pressable style={styles.approve} onPress={() => respond(item.id, 'approved')}>
-              <Text style={styles.actionText}>Approve</Text>
+              <Text style={styles.actionText}>{t('common.approve')}</Text>
             </Pressable>
             <Pressable style={styles.deny} onPress={() => respond(item.id, 'denied')}>
-              <Text style={styles.actionText}>Deny</Text>
+              <Text style={styles.actionText}>{t('common.deny')}</Text>
             </Pressable>
           </View>
         )}
       />
 
-      <Text style={styles.title}>Shift swaps awaiting your OK</Text>
+      <Text style={styles.title}>{t('owner.approvals.swapsAwaitingOk')}</Text>
       <FlatList
         data={swaps}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>None pending.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('owner.approvals.nonePending')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Text style={{ flex: 1 }}>A coworker accepted a shift swap</Text>
+            <Text style={{ flex: 1 }}>{t('owner.approvals.coworkerAccepted')}</Text>
             <Pressable style={styles.approve} onPress={() => respondToSwap(item, true)}>
-              <Text style={styles.actionText}>Approve</Text>
+              <Text style={styles.actionText}>{t('common.approve')}</Text>
             </Pressable>
             <Pressable style={styles.deny} onPress={() => respondToSwap(item, false)}>
-              <Text style={styles.actionText}>Deny</Text>
+              <Text style={styles.actionText}>{t('common.deny')}</Text>
             </Pressable>
           </View>
         )}

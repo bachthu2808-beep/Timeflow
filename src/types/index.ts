@@ -7,6 +7,7 @@ export interface Profile {
   ownerId: string; // the owner account this staff member belongs to (self-referential for owners)
   role: UserRole;
   fullName: string;
+  jobTitle: string | null;
   payBasis: PayBasis;
   hourlyRate: number | null;
   monthlyRate: number | null;
@@ -24,6 +25,7 @@ export interface Shop {
   longitude: number;
   geofenceRadiusMeters: number;
   dailyLaborBudget: number | null;
+  isOpen: boolean;
 }
 
 export type ShiftStatus = 'active' | 'completed';
@@ -103,6 +105,7 @@ export interface StaffInvitation {
   ownerId: string;
   email: string;
   fullName: string;
+  jobTitle: string | null;
   payBasis: PayBasis;
   hourlyRate: number | null;
   monthlyRate: number | null;

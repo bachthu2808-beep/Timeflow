@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { ScheduledShift, SwapRequest } from '../../types';
 
 export default function EmployeeScheduleScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [schedule, setSchedule] = useState<ScheduledShift[]>([]);
   const [openSwaps, setOpenSwaps] = useState<SwapRequest[]>([]);
@@ -75,8 +77,8 @@ export default function EmployeeScheduleScreen() {
       owner_id: scheduleShift.ownerId,
       requesting_staff_id: profile.id,
     });
-    if (error) Alert.alert('Failed', error.message);
-    else Alert.alert('Offered', 'Your shift is now open for a coworker to pick up, pending owner approval.');
+    if (error) Alert.alert(t('common.failedTitle'), error.message);
+    else Alert.alert(t('employee.schedule.offeredTitle'), t('employee.schedule.offeredMessage'));
   }
 
   async function acceptSwap(swap: SwapRequest) {
@@ -85,39 +87,39 @@ export default function EmployeeScheduleScreen() {
       .from('swap_requests')
       .update({ status: 'accepted', accepted_by_staff_id: profile.id })
       .eq('id', swap.id);
-    if (error) Alert.alert('Failed', error.message);
+    if (error) Alert.alert(t('common.failedTitle'), error.message);
     else load();
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your upcoming shifts</Text>
+      <Text style={styles.title}>{t('employee.schedule.upcomingShifts')}</Text>
       <FlatList
         data={schedule}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>Nothing scheduled yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('owner.schedule.nothingScheduled')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.time}>
               {new Date(item.startsAt).toLocaleString()} – {new Date(item.endsAt).toLocaleTimeString()}
             </Text>
             <Pressable onPress={() => offerSwap(item)}>
-              <Text style={styles.offer}>Offer swap</Text>
+              <Text style={styles.offer}>{t('employee.schedule.offerSwap')}</Text>
             </Pressable>
           </View>
         )}
       />
 
-      <Text style={styles.title}>Open swaps from coworkers</Text>
+      <Text style={styles.title}>{t('employee.schedule.openSwaps')}</Text>
       <FlatList
         data={openSwaps}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>No open swaps right now.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('employee.schedule.noOpenSwaps')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Text>Swap request</Text>
+            <Text>{t('employee.schedule.swapRequest')}</Text>
             <Pressable onPress={() => acceptSwap(item)}>
-              <Text style={styles.offer}>Accept</Text>
+              <Text style={styles.offer}>{t('common.accept')}</Text>
             </Pressable>
           </View>
         )}

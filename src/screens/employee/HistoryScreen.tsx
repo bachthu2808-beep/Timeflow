@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { ShiftRecord } from '../../types';
 
 export default function HistoryScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [shifts, setShifts] = useState<ShiftRecord[]>([]);
 
@@ -38,17 +40,17 @@ export default function HistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Attendance history</Text>
+      <Text style={styles.title}>{t('employee.history.title')}</Text>
       <FlatList
         data={shifts}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>No shifts yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('employee.history.noShiftsYet')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.date}>{new Date(item.clockInAt).toLocaleDateString()}</Text>
             <Text style={styles.time}>
               {new Date(item.clockInAt).toLocaleTimeString()} –{' '}
-              {item.clockOutAt ? new Date(item.clockOutAt).toLocaleTimeString() : 'active'}
+              {item.clockOutAt ? new Date(item.clockOutAt).toLocaleTimeString() : t('employee.history.active')}
             </Text>
           </View>
         )}

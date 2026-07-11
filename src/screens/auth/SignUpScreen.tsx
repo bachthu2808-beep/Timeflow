@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 
 type Mode = 'owner' | 'employee';
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function SignUpScreen({ onBackToLogin }: Props) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('owner');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -20,7 +22,7 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
     setError(null);
 
     if (!fullName.trim() || !email.trim() || password.length < 6) {
-      setError('Enter your name, email, and a password of at least 6 characters.');
+      setError(t('auth.signup.validationError'));
       return;
     }
 
@@ -28,7 +30,7 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
       if (signUpError || !data.user) {
-        setError(signUpError?.message ?? 'Sign up failed.');
+        setError(signUpError?.message ?? t('auth.signup.signUpFailed'));
         return;
       }
 
@@ -49,7 +51,7 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
           .maybeSingle();
 
         if (findError || !invitation) {
-          setError("No pending invitation found for this email. Ask your owner to invite you first.");
+          setError(t('auth.signup.noInvitation'));
           return;
         }
 
@@ -68,45 +70,43 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create your account</Text>
+      <Text style={styles.title}>{t('auth.signup.title')}</Text>
 
       <View style={styles.modeRow}>
         <Pressable style={[styles.modeChip, mode === 'owner' && styles.modeChipSelected]} onPress={() => setMode('owner')}>
-          <Text style={mode === 'owner' ? styles.modeTextSelected : styles.modeText}>I'm the owner</Text>
+          <Text style={mode === 'owner' ? styles.modeTextSelected : styles.modeText}>{t('auth.signup.modeOwner')}</Text>
         </Pressable>
         <Pressable
           style={[styles.modeChip, mode === 'employee' && styles.modeChipSelected]}
           onPress={() => setMode('employee')}
         >
-          <Text style={mode === 'employee' ? styles.modeTextSelected : styles.modeText}>I'm joining a shop</Text>
+          <Text style={mode === 'employee' ? styles.modeTextSelected : styles.modeText}>{t('auth.signup.modeEmployee')}</Text>
         </Pressable>
       </View>
 
       {mode === 'employee' ? (
-        <Text style={styles.hint}>
-          Your owner needs to invite you by email first (Roster → Invite staff) before you can sign up here.
-        </Text>
+        <Text style={styles.hint}>{t('auth.signup.employeeHint')}</Text>
       ) : null}
 
-      <TextInput style={styles.input} placeholder="Full name" value={fullName} onChangeText={setFullName} />
+      <TextInput style={styles.input} placeholder={t('auth.signup.fullNamePlaceholder')} value={fullName} onChangeText={setFullName} />
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder={t('auth.emailPlaceholder')}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
       />
-      <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+      <TextInput style={styles.input} placeholder={t('auth.passwordPlaceholder')} secureTextEntry value={password} onChangeText={setPassword} />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.button} onPress={handleSignUp} disabled={submitting}>
-        {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create account</Text>}
+        {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.signup.createAccount')}</Text>}
       </Pressable>
 
       <Pressable onPress={onBackToLogin}>
-        <Text style={styles.link}>Already have an account? Sign in</Text>
+        <Text style={styles.link}>{t('auth.signup.backToSignIn')}</Text>
       </Pressable>
     </View>
   );

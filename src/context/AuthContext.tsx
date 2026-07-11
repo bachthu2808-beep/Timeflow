@@ -24,6 +24,7 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     ownerId: data.owner_id,
     role: data.role,
     fullName: data.full_name,
+    jobTitle: data.job_title,
     payBasis: data.pay_basis,
     hourlyRate: data.hourly_rate,
     monthlyRate: data.monthly_rate,

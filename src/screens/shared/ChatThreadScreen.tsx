@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { ChatMessage } from '../../types';
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function ChatThreadScreen({ ownerId, staffId }: Props) {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
@@ -81,11 +83,11 @@ export default function ChatThreadScreen({ ownerId, staffId }: Props) {
           style={styles.input}
           value={draft}
           onChangeText={setDraft}
-          placeholder="Message…"
+          placeholder={t('chat.messagePlaceholder')}
           onSubmitEditing={send}
         />
         <Pressable style={styles.sendButton} onPress={send}>
-          <Text style={styles.sendButtonText}>Send</Text>
+          <Text style={styles.sendButtonText}>{t('chat.send')}</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

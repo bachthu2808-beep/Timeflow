@@ -1,0 +1,221 @@
+{
+  "common": {
+    "save": "Lưu",
+    "saving": "Đang lưu…",
+    "savedTitle": "Đã lưu",
+    "cancel": "Hủy",
+    "approve": "Duyệt",
+    "deny": "Từ chối",
+    "accept": "Chấp nhận",
+    "unknown": "Không rõ",
+    "loading": "Đang tải…",
+    "hourly": "Theo giờ",
+    "monthly": "Theo tháng",
+    "missingInfoTitle": "Thiếu thông tin",
+    "failedTitle": "Thất bại",
+    "failedToSaveTitle": "Lưu thất bại"
+  },
+  "auth": {
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Mật khẩu",
+    "login": {
+      "signIn": "Đăng nhập",
+      "signUpLink": "Chưa có tài khoản? Tạo tài khoản"
+    },
+    "signup": {
+      "title": "Tạo tài khoản của bạn",
+      "modeOwner": "Tôi là chủ quán",
+      "modeEmployee": "Tôi tham gia một quán",
+      "employeeHint": "Chủ quán cần mời bạn qua email trước (Nhân viên → Mời nhân viên) thì bạn mới đăng ký được ở đây.",
+      "fullNamePlaceholder": "Họ và tên",
+      "createAccount": "Tạo tài khoản",
+      "backToSignIn": "Đã có tài khoản? Đăng nhập",
+      "validationError": "Nhập họ tên, email, và mật khẩu ít nhất 6 ký tự.",
+      "signUpFailed": "Đăng ký thất bại.",
+      "noInvitation": "Không tìm thấy lời mời nào đang chờ cho email này. Hãy nhờ chủ quán mời bạn trước."
+    }
+  },
+  "nav": {
+    "owner": {
+      "dashboard": "Tổng quan",
+      "shop": "Quán",
+      "schedule": "Lịch làm",
+      "roster": "Nhân viên",
+      "approvals": "Duyệt yêu cầu",
+      "payroll": "Lương",
+      "chat": "Nhắn tin",
+      "auditLog": "Nhật ký"
+    },
+    "employee": {
+      "clock": "Chấm công",
+      "schedule": "Lịch làm",
+      "payslip": "Phiếu lương",
+      "history": "Lịch sử",
+      "chat": "Nhắn tin"
+    }
+  },
+  "owner": {
+    "dashboard": {
+      "goodMorning": "Chào buổi sáng",
+      "goodAfternoon": "Chào buổi chiều",
+      "goodEvening": "Chào buổi tối",
+      "storeOpen": "Đang mở cửa",
+      "storeClosed": "Đã đóng cửa",
+      "present": "Có mặt",
+      "clockedIn": "đã chấm công",
+      "absent": "Vắng mặt",
+      "unplanned": "không báo trước",
+      "late": "Trễ",
+      "pastGrace": "quá giờ cho phép",
+      "onLeave": "Nghỉ phép",
+      "approved": "đã duyệt",
+      "laborCostToday": "Chi phí nhân công · hôm nay",
+      "percentOfBudget": "{{percent}}% ngân sách",
+      "shiftsLogged": "{{count}} ca đã ghi nhận",
+      "budgetAmount": "Ngân sách {{amount}}",
+      "laborCostWeek": "Chi phí nhân công · tuần này",
+      "pendingApprovals": "Yêu cầu đang chờ duyệt",
+      "pendingApprovalsSubtitle": "Nghỉ phép, tăng ca & yêu cầu chỉnh sửa",
+      "onShift": "Đang làm · {{count}}",
+      "lateTag": "Trễ",
+      "onTimeTag": "Đúng giờ",
+      "noOneClockedIn": "Hiện chưa có ai chấm công.",
+      "since": "từ {{time}}"
+    },
+    "shop": {
+      "settingsTitle": "Cài đặt quán",
+      "setupTitle": "Thiết lập quán của bạn",
+      "nameLabel": "Tên quán",
+      "namePlaceholder": "VD: Cà phê Sông Hàn",
+      "radiusLabel": "Bán kính định vị (mét)",
+      "budgetLabel": "Ngân sách nhân công mỗi ngày (không bắt buộc, để cảnh báo)",
+      "budgetPlaceholder": "VD: 200",
+      "openLabel": "Đang mở",
+      "locationLabel": "Vị trí",
+      "locationNotSet": "Chưa thiết lập",
+      "useCurrentLocation": "Dùng vị trí hiện tại của tôi",
+      "locationRequiredTitle": "Cần quyền truy cập vị trí",
+      "locationRequiredMessage": "Cho phép truy cập vị trí để đặt quán tại vị trí hiện tại của bạn.",
+      "missingInfoMessage": "Nhập tên quán và thiết lập vị trí trước.",
+      "savedMessage": "Đã cập nhật cài đặt quán."
+    },
+    "roster": {
+      "title": "Danh sách nhân viên",
+      "inviteStaff": "Mời nhân viên",
+      "noStaffYet": "Chưa có nhân viên nào.",
+      "pendingInvitations": "Lời mời đang chờ",
+      "missingInfoMessage": "Điền tên, email và mức lương.",
+      "failedToInviteTitle": "Mời thất bại",
+      "invitedTitle": "Đã mời",
+      "invitedMessage": "{{fullName}} giờ có thể đăng ký trong ứng dụng với email {{email}} để tham gia nhóm của bạn.",
+      "fullNamePlaceholder": "Họ và tên",
+      "hourlyRatePlaceholder": "Lương theo giờ",
+      "monthlyRatePlaceholder": "Lương theo tháng",
+      "lunchAllowancePlaceholder": "Phụ cấp ăn trưa mỗi ca",
+      "sending": "Đang gửi…",
+      "sendInvitation": "Gửi lời mời",
+      "hourlyRate": "${{rate}}/giờ",
+      "monthlyRate": "${{rate}}/tháng"
+    },
+    "schedule": {
+      "buildRota": "Xếp lịch làm",
+      "staffLabel": "Nhân viên",
+      "shopLabel": "Quán",
+      "startLabel": "Bắt đầu",
+      "endLabel": "Kết thúc",
+      "addToRota": "Thêm vào lịch",
+      "upcoming": "Sắp tới",
+      "nothingScheduled": "Chưa có lịch nào.",
+      "missingInfoMessage": "Chọn nhân viên và quán trước.",
+      "failedToAddTitle": "Thêm ca thất bại"
+    },
+    "approvals": {
+      "pendingRequests": "Yêu cầu đang chờ",
+      "nothingPending": "Không có yêu cầu nào.",
+      "timeOff": "Nghỉ phép",
+      "scheduleChange": "Đổi lịch làm",
+      "swapsAwaitingOk": "Đổi ca đang chờ bạn duyệt",
+      "nonePending": "Không có gì đang chờ.",
+      "coworkerAccepted": "Một nhân viên đã nhận đổi ca"
+    },
+    "payroll": {
+      "title": "Kỳ trả lương",
+      "running": "Đang xử lý…",
+      "runButton": "Tính lương & xuất CSV",
+      "noRunsYet": "Chưa có kỳ trả lương nào.",
+      "noStaffTitle": "Chưa có nhân viên",
+      "noStaffMessage": "Thêm nhân viên vào danh sách trước khi tính lương.",
+      "exportDialogTitle": "Xuất bảng lương",
+      "status": {
+        "open": "đang mở",
+        "processing": "đang xử lý",
+        "paid": "đã trả"
+      }
+    },
+    "chatList": {
+      "staffTitle": "Nhân viên",
+      "noStaffToMessage": "Chưa có nhân viên để nhắn tin."
+    },
+    "auditLog": {
+      "title": "Nhật ký hoạt động",
+      "subtitle": "Mọi lần chấm công và quyết định duyệt đều được ghi lại tự động để giải quyết tranh chấp.",
+      "noActivity": "Chưa có hoạt động nào.",
+      "actions": {
+        "shift_clock_in": "Đã chấm công vào",
+        "shift_updated": "Cập nhật ca làm",
+        "approval_requested": "Đã gửi yêu cầu duyệt",
+        "approval_approved": "Đã duyệt yêu cầu",
+        "approval_denied": "Đã từ chối yêu cầu"
+      }
+    }
+  },
+  "employee": {
+    "clock": {
+      "currentlyClockedIn": "Đang trong ca làm",
+      "notClockedIn": "Bạn chưa chấm công",
+      "clockIn": "Chấm công vào",
+      "clockOut": "Chấm công ra",
+      "noShopTitle": "Chưa được gán quán",
+      "noShopMessage": "Nhờ chủ quán thiết lập quán mặc định cho bạn trước khi chấm công.",
+      "locationRequiredMessage": "bt28staff cần quyền truy cập vị trí để xác nhận bạn đang ở quán.",
+      "outOfRangeTitle": "Ngoài phạm vi",
+      "outOfRangeMessage": "Bạn chưa đủ gần quán để chấm công.",
+      "savedOfflineTitle": "Đã lưu ngoại tuyến",
+      "savedOfflineMessage": "Bạn đã chấm công. Dữ liệu sẽ đồng bộ khi có mạng trở lại.",
+      "streak": "🔥 Chuỗi {{count}} ngày đúng giờ",
+      "pendingSync": "{{count}} thao tác đang chờ đồng bộ"
+    },
+    "schedule": {
+      "upcomingShifts": "Ca làm sắp tới của bạn",
+      "offerSwap": "Đề nghị đổi ca",
+      "offeredTitle": "Đã đề nghị",
+      "offeredMessage": "Ca làm của bạn hiện đang mở để đồng nghiệp nhận, chờ chủ quán duyệt.",
+      "openSwaps": "Ca đổi đang mở từ đồng nghiệp",
+      "noOpenSwaps": "Hiện chưa có ca đổi nào đang mở.",
+      "swapRequest": "Yêu cầu đổi ca"
+    },
+    "payslip": {
+      "title": "Phiếu lương",
+      "regularPay": "Lương cơ bản",
+      "overtimePay": "Lương tăng ca",
+      "holidayPay": "Lương ngày lễ",
+      "lunchAllowance": "Phụ cấp ăn trưa",
+      "total": "Tổng cộng",
+      "exportPdf": "Xuất PDF",
+      "range": {
+        "today": "hôm nay",
+        "week": "tuần này",
+        "month": "tháng này"
+      }
+    },
+    "history": {
+      "title": "Lịch sử chấm công",
+      "noShiftsYet": "Chưa có ca làm nào.",
+      "active": "đang làm"
+    }
+  },
+  "chat": {
+    "messagePlaceholder": "Nhắn tin…",
+    "send": "Gửi"
+  }
+}

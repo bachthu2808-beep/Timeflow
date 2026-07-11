@@ -10,6 +10,7 @@ create table profiles (
   owner_id uuid not null references profiles (id) on delete cascade,
   role text not null check (role in ('owner', 'employee')),
   full_name text not null,
+  job_title text,
   pay_basis text not null check (pay_basis in ('hourly', 'monthly')),
   hourly_rate numeric,
   monthly_rate numeric,
@@ -28,6 +29,7 @@ create table shops (
   longitude double precision not null,
   geofence_radius_meters integer not null default 100,
   daily_labor_budget numeric,
+  is_open boolean not null default true,
   created_at timestamptz not null default now()
 );
 
@@ -185,6 +187,7 @@ create table staff_invitations (
   owner_id uuid not null references profiles (id) on delete cascade,
   email text not null,
   full_name text not null,
+  job_title text,
   pay_basis text not null check (pay_basis in ('hourly', 'monthly')),
   hourly_rate numeric,
   monthly_rate numeric,
@@ -230,11 +233,11 @@ begin
   end if;
 
   insert into profiles (
-    id, owner_id, role, full_name, pay_basis, hourly_rate, monthly_rate,
+    id, owner_id, role, full_name, job_title, pay_basis, hourly_rate, monthly_rate,
     lunch_allowance_per_shift, default_shop_id
   )
   values (
-    auth.uid(), inv.owner_id, 'employee', inv.full_name, inv.pay_basis, inv.hourly_rate,
+    auth.uid(), inv.owner_id, 'employee', inv.full_name, inv.job_title, inv.pay_basis, inv.hourly_rate,
     inv.monthly_rate, inv.lunch_allowance_per_shift, inv.default_shop_id
   );
 

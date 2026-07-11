@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -15,6 +16,7 @@ interface StaffRow {
 }
 
 export default function ChatListScreen({ navigation }: NativeStackScreenProps<ChatStackParamList, 'ChatList'>) {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [staff, setStaff] = useState<StaffRow[]>([]);
 
@@ -35,7 +37,7 @@ export default function ChatListScreen({ navigation }: NativeStackScreenProps<Ch
       <FlatList
         data={staff}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>No staff to message yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('owner.chatList.noStaffToMessage')}</Text>}
         renderItem={({ item }) => (
           <Pressable
             style={styles.row}

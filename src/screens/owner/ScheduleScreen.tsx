@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { Profile, ScheduledShift, Shop } from '../../types';
 
 export default function ScheduleScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [staff, setStaff] = useState<Profile[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -38,6 +40,7 @@ export default function ScheduleScreen() {
           ownerId: row.owner_id,
           role: row.role,
           fullName: row.full_name,
+          jobTitle: row.job_title,
           payBasis: row.pay_basis,
           hourlyRate: row.hourly_rate,
           monthlyRate: row.monthly_rate,
@@ -58,6 +61,7 @@ export default function ScheduleScreen() {
           longitude: row.longitude,
           geofenceRadiusMeters: row.geofence_radius_meters,
           dailyLaborBudget: row.daily_labor_budget,
+          isOpen: row.is_open,
         }))
       );
     }
@@ -82,7 +86,7 @@ export default function ScheduleScreen() {
 
   async function handleCreate() {
     if (!profile || !selectedStaffId || !selectedShopId) {
-      Alert.alert('Missing info', 'Pick a staff member and a shop first.');
+      Alert.alert(t('common.missingInfoTitle'), t('owner.schedule.missingInfoMessage'));
       return;
     }
 
@@ -95,7 +99,7 @@ export default function ScheduleScreen() {
     });
 
     if (error) {
-      Alert.alert('Failed to add shift', error.message);
+      Alert.alert(t('owner.schedule.failedToAddTitle'), error.message);
       return;
     }
 
@@ -104,9 +108,9 @@ export default function ScheduleScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Build the rota</Text>
+      <Text style={styles.title}>{t('owner.schedule.buildRota')}</Text>
 
-      <Text style={styles.label}>Staff</Text>
+      <Text style={styles.label}>{t('owner.schedule.staffLabel')}</Text>
       <View style={styles.chipRow}>
         {staff.map((s) => (
           <Pressable
@@ -119,7 +123,7 @@ export default function ScheduleScreen() {
         ))}
       </View>
 
-      <Text style={styles.label}>Shop</Text>
+      <Text style={styles.label}>{t('owner.schedule.shopLabel')}</Text>
       <View style={styles.chipRow}>
         {shops.map((s) => (
           <Pressable
@@ -134,11 +138,11 @@ export default function ScheduleScreen() {
 
       <View style={styles.timeRow}>
         <Pressable style={styles.timeButton} onPress={() => setPickerTarget('start')}>
-          <Text style={styles.label}>Start</Text>
+          <Text style={styles.label}>{t('owner.schedule.startLabel')}</Text>
           <Text>{startsAt.toLocaleString()}</Text>
         </Pressable>
         <Pressable style={styles.timeButton} onPress={() => setPickerTarget('end')}>
-          <Text style={styles.label}>End</Text>
+          <Text style={styles.label}>{t('owner.schedule.endLabel')}</Text>
           <Text>{endsAt.toLocaleString()}</Text>
         </Pressable>
       </View>
@@ -157,19 +161,19 @@ export default function ScheduleScreen() {
       ) : null}
 
       <Pressable style={styles.addButton} onPress={handleCreate}>
-        <Text style={styles.addButtonText}>Add to rota</Text>
+        <Text style={styles.addButtonText}>{t('owner.schedule.addToRota')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>Upcoming</Text>
+      <Text style={styles.title}>{t('owner.schedule.upcoming')}</Text>
       <FlatList
         data={schedule}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>Nothing scheduled yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('owner.schedule.nothingScheduled')}</Text>}
         renderItem={({ item }) => {
           const s = staff.find((st) => st.id === item.staffId);
           return (
             <View style={styles.row}>
-              <Text style={styles.name}>{s?.fullName ?? 'Unknown'}</Text>
+              <Text style={styles.name}>{s?.fullName ?? t('common.unknown')}</Text>
               <Text style={styles.since}>
                 {new Date(item.startsAt).toLocaleString()} – {new Date(item.endsAt).toLocaleTimeString()}
               </Text>

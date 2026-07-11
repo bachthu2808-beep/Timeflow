@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { calculatePay } from '../../payroll/calculatePay';
@@ -17,6 +18,7 @@ function startOfWeek(): Date {
 }
 
 export default function PayrollRunScreen() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [periods, setPeriods] = useState<PayPeriod[]>([]);
   const [running, setRunning] = useState(false);
@@ -61,7 +63,7 @@ export default function PayrollRunScreen() {
         .eq('role', 'employee');
 
       if (!staff || staff.length === 0) {
-        Alert.alert('No staff', 'Add staff to the roster before running payroll.');
+        Alert.alert(t('owner.payroll.noStaffTitle'), t('owner.payroll.noStaffMessage'));
         return;
       }
 
@@ -112,7 +114,7 @@ export default function PayrollRunScreen() {
       await loadPeriods();
 
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: 'Payroll export' });
+        await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: t('owner.payroll.exportDialogTitle') });
       }
     } finally {
       setRunning(false);
@@ -121,20 +123,20 @@ export default function PayrollRunScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Payroll runs</Text>
+      <Text style={styles.title}>{t('owner.payroll.title')}</Text>
       <Pressable style={styles.runButton} onPress={runPayroll} disabled={running}>
-        <Text style={styles.runButtonText}>{running ? 'Running…' : 'Run payroll & export CSV'}</Text>
+        <Text style={styles.runButtonText}>{running ? t('owner.payroll.running') : t('owner.payroll.runButton')}</Text>
       </Pressable>
       <FlatList
         data={periods}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>No payroll runs yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('owner.payroll.noRunsYet')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.name}>
               {new Date(item.periodStart).toLocaleDateString()} – {new Date(item.periodEnd).toLocaleDateString()}
             </Text>
-            <Text style={styles.status}>{item.status}</Text>
+            <Text style={styles.status}>{t(`owner.payroll.status.${item.status}`)}</Text>
           </View>
         )}
       />
