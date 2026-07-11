@@ -9,7 +9,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "TimeFlow checks your location only when you tap Clock In or Clock Out, to confirm you're at the shop."
+        "NSLocationWhenInUseUsageDescription": "TimeFlow checks your location only when you tap Clock In or Clock Out, to confirm you're at the shop.",
+        "NSCameraUsageDescription": "TimeFlow takes a photo when you clock in, so your owner can verify who worked each shift."
       }
     },
     "android": {
@@ -20,7 +21,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["ACCESS_FINE_LOCATION"]
+      "permissions": ["ACCESS_FINE_LOCATION", "CAMERA"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +31,12 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "TimeFlow checks your location only when you tap Clock In or Clock Out, to confirm you're at the shop."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "TimeFlow takes a photo when you clock in, so your owner can verify who worked each shift."
         }
       ]
     ]

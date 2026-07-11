@@ -29,6 +29,8 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     monthlyRate: data.monthly_rate,
     lunchAllowancePerShift: data.lunch_allowance_per_shift,
     payRuleSetId: data.pay_rule_set_id,
+    defaultShopId: data.default_shop_id,
+    expoPushToken: data.expo_push_token,
   };
 }
 

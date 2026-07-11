@@ -21,6 +21,8 @@ export interface PayRuleSet {
   unpaidLunchMinutes: number;
   /** Round worked minutes per shift to the nearest N minutes. 0 disables rounding. */
   roundingMinutes: number;
+  /** Flat multiplier applied to hourly holiday-shift minutes, bypassing overtime tiers. */
+  holidayMultiplier: number;
 }
 
 /** Placeholder rule set for markets not yet configured. Replace before launch. */
@@ -30,4 +32,5 @@ export const GENERIC_PAY_RULES: PayRuleSet = {
   overtimeTiers: [{ afterMinutes: 8 * 60, multiplier: 1.5 }],
   unpaidLunchMinutes: 30,
   roundingMinutes: 5,
+  holidayMultiplier: 2,
 };

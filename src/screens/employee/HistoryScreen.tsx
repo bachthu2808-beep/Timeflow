@@ -27,7 +27,10 @@ export default function HistoryScreen() {
             clockInAt: row.clock_in_at,
             clockOutAt: row.clock_out_at,
             paidLunch: row.paid_lunch,
+            isHoliday: row.is_holiday,
             status: row.status,
+            mockedLocation: row.mocked_location,
+            clockInPhotoUrl: row.clock_in_photo_url,
           }))
         );
       });

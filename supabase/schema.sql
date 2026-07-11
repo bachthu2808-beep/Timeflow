@@ -15,6 +15,8 @@ create table profiles (
   monthly_rate numeric,
   lunch_allowance_per_shift numeric not null default 0,
   pay_rule_set_id text not null default 'generic',
+  default_shop_id uuid,
+  expo_push_token text,
   created_at timestamptz not null default now()
 );
 
@@ -25,8 +27,13 @@ create table shops (
   latitude double precision not null,
   longitude double precision not null,
   geofence_radius_meters integer not null default 100,
+  daily_labor_budget numeric,
   created_at timestamptz not null default now()
 );
+
+alter table profiles
+  add constraint profiles_default_shop_id_fkey
+  foreign key (default_shop_id) references shops (id) on delete set null;
 
 create table shifts (
   id uuid primary key default gen_random_uuid(),
@@ -35,9 +42,25 @@ create table shifts (
   clock_in_at timestamptz not null default now(),
   clock_out_at timestamptz,
   paid_lunch boolean not null default false,
+  is_holiday boolean not null default false,
   status text not null default 'active' check (status in ('active', 'completed')),
+  mocked_location boolean not null default false,
+  clock_in_photo_url text,
+  updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
+
+create or replace function set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger shifts_set_updated_at
+  before update on shifts
+  for each row execute function set_updated_at();
 
 create table approval_requests (
   id uuid primary key default gen_random_uuid(),
@@ -59,6 +82,100 @@ create table pay_periods (
   status text not null default 'open' check (status in ('open', 'processing', 'paid')),
   created_at timestamptz not null default now()
 );
+
+-- Scheduling: shifts an owner plans in advance, distinct from `shifts` (which
+-- records actual clock in/out punches).
+create table shift_schedule (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references profiles (id) on delete cascade,
+  shop_id uuid not null references shops (id) on delete cascade,
+  staff_id uuid not null references profiles (id) on delete cascade,
+  starts_at timestamptz not null,
+  ends_at timestamptz not null,
+  status text not null default 'scheduled' check (status in ('scheduled', 'completed', 'cancelled')),
+  created_at timestamptz not null default now()
+);
+
+-- Shift swap marketplace: an employee offers a scheduled shift, either to a
+-- specific coworker or open to anyone, and the owner gives final approval.
+create table swap_requests (
+  id uuid primary key default gen_random_uuid(),
+  schedule_id uuid not null references shift_schedule (id) on delete cascade,
+  owner_id uuid not null references profiles (id) on delete cascade,
+  requesting_staff_id uuid not null references profiles (id) on delete cascade,
+  target_staff_id uuid references profiles (id) on delete cascade, -- null = open to anyone
+  accepted_by_staff_id uuid references profiles (id) on delete set null,
+  status text not null default 'open' check (status in ('open', 'accepted', 'owner_approved', 'denied', 'cancelled')),
+  created_at timestamptz not null default now()
+);
+
+-- Chat: one thread per owner/employee pair.
+create table messages (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references profiles (id) on delete cascade,
+  staff_id uuid not null references profiles (id) on delete cascade,
+  sender_id uuid not null references profiles (id) on delete cascade,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+-- Audit log: append-only, populated by DB triggers so it can't be skipped by
+-- an app-level bug. Used to resolve wage disputes ("who approved what, when").
+create table audit_log (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null,
+  actor_id uuid,
+  action text not null,
+  entity_type text not null,
+  entity_id uuid not null,
+  detail jsonb,
+  created_at timestamptz not null default now()
+);
+
+create or replace function log_shift_audit()
+returns trigger as $$
+begin
+  insert into audit_log (owner_id, actor_id, action, entity_type, entity_id, detail)
+  select
+    p.owner_id,
+    auth.uid(),
+    case when TG_OP = 'INSERT' then 'shift_clock_in' else 'shift_updated' end,
+    'shift',
+    new.id,
+    jsonb_build_object(
+      'clock_in_at', new.clock_in_at,
+      'clock_out_at', new.clock_out_at,
+      'status', new.status,
+      'mocked_location', new.mocked_location
+    )
+  from profiles p where p.id = new.staff_id;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger shifts_audit
+  after insert or update on shifts
+  for each row execute function log_shift_audit();
+
+create or replace function log_approval_audit()
+returns trigger as $$
+begin
+  insert into audit_log (owner_id, actor_id, action, entity_type, entity_id, detail)
+  values (
+    new.owner_id,
+    auth.uid(),
+    case when TG_OP = 'INSERT' then 'approval_requested' else 'approval_' || new.status end,
+    'approval_request',
+    new.id,
+    jsonb_build_object('kind', new.kind, 'status', new.status)
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger approval_requests_audit
+  after insert or update on approval_requests
+  for each row execute function log_approval_audit();
 
 -- Row Level Security: owners see/manage their own shop's data, employees see
 -- only their own records (plus the shop they're assigned to, for geofencing).
@@ -100,6 +217,62 @@ create policy "approval_requests: owner reads and responds" on approval_requests
 create policy "pay_periods: owner manages own periods" on pay_periods
   for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 
+alter table shift_schedule enable row level security;
+alter table swap_requests enable row level security;
+alter table messages enable row level security;
+alter table audit_log enable row level security;
+
+create policy "shift_schedule: owner manages own schedule" on shift_schedule
+  for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+create policy "shift_schedule: staff read their own scheduled shifts" on shift_schedule
+  for select using (staff_id = auth.uid());
+
+create policy "swap_requests: owner manages own" on swap_requests
+  for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+create policy "swap_requests: requester manages own request" on swap_requests
+  for all using (requesting_staff_id = auth.uid()) with check (requesting_staff_id = auth.uid());
+
+create policy "swap_requests: staff read open or targeted requests" on swap_requests
+  for select using (
+    target_staff_id = auth.uid()
+    or (target_staff_id is null and owner_id in (select owner_id from profiles where id = auth.uid()))
+  );
+
+create policy "swap_requests: staff accept an open or targeted request" on swap_requests
+  for update using (
+    status = 'open'
+    and (target_staff_id = auth.uid() or target_staff_id is null)
+    and owner_id in (select owner_id from profiles where id = auth.uid())
+  );
+
+create policy "messages: participants read and send" on messages
+  for all using (owner_id = auth.uid() or staff_id = auth.uid())
+  with check (sender_id = auth.uid() and (owner_id = auth.uid() or staff_id = auth.uid()));
+
+create policy "audit_log: owner reads own log" on audit_log
+  for select using (owner_id = auth.uid());
+
+-- Storage: clock-in photos (staff-uploaded, owner-reviewable for dispute resolution).
+insert into storage.buckets (id, name, public) values ('clock-in-photos', 'clock-in-photos', false)
+  on conflict (id) do nothing;
+
+create policy "clock-in-photos: staff upload their own" on storage.objects
+  for insert with check (bucket_id = 'clock-in-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "clock-in-photos: staff and their owner can view" on storage.objects
+  for select using (
+    bucket_id = 'clock-in-photos'
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or (storage.foldername(name))[1] in (select id::text from profiles where owner_id = auth.uid())
+    )
+  );
+
 -- Realtime: enable change notifications on the tables the apps subscribe to.
 alter publication supabase_realtime add table shifts;
 alter publication supabase_realtime add table approval_requests;
+alter publication supabase_realtime add table shift_schedule;
+alter publication supabase_realtime add table swap_requests;
+alter publication supabase_realtime add table messages;

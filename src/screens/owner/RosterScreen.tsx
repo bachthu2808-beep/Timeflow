@@ -29,6 +29,8 @@ export default function RosterScreen() {
             monthlyRate: row.monthly_rate,
             lunchAllowancePerShift: row.lunch_allowance_per_shift,
             payRuleSetId: row.pay_rule_set_id,
+            defaultShopId: row.default_shop_id,
+            expoPushToken: row.expo_push_token,
           }))
         );
       });

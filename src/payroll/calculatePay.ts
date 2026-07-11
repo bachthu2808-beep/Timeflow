@@ -7,6 +7,8 @@ export interface Shift {
   clockOutMinutes: number | null;
   /** Whether this shift has a paid lunch allowance (skips the unpaid-lunch deduction). */
   paidLunch: boolean;
+  /** Holiday shifts are paid at rules.holidayMultiplier and excluded from overtime tiering. */
+  isHoliday?: boolean;
 }
 
 export interface PayInput {
@@ -23,8 +25,10 @@ export interface PayInput {
 export interface PayResult {
   regularMinutes: number;
   overtimeMinutes: number;
+  holidayMinutes: number;
   regularPay: number;
   overtimePay: number;
+  holidayPay: number;
   lunchAllowance: number;
   totalPay: number;
 }
@@ -74,10 +78,16 @@ export function calculatePay(input: PayInput): PayResult {
   const rules = input.rules;
 
   let totalWorkedMinutes = 0;
+  let holidayMinutes = 0;
   let lunchAllowance = 0;
 
   for (const shift of input.shifts) {
-    totalWorkedMinutes += calculateShiftMinutes(shift, rules, nowMinutes);
+    const minutes = calculateShiftMinutes(shift, rules, nowMinutes);
+    if (shift.isHoliday) {
+      holidayMinutes += minutes;
+    } else {
+      totalWorkedMinutes += minutes;
+    }
     if (shift.paidLunch && input.lunchAllowancePerShift) {
       lunchAllowance += input.lunchAllowancePerShift;
     }
@@ -88,8 +98,10 @@ export function calculatePay(input: PayInput): PayResult {
     return {
       regularMinutes: totalWorkedMinutes,
       overtimeMinutes: 0,
+      holidayMinutes,
       regularPay,
       overtimePay: 0,
+      holidayPay: 0,
       lunchAllowance,
       totalPay: regularPay + lunchAllowance,
     };
@@ -104,13 +116,16 @@ export function calculatePay(input: PayInput): PayResult {
     0
   );
   const regularPay = (regularMinutes / 60) * hourlyRate;
+  const holidayPay = (holidayMinutes / 60) * hourlyRate * rules.holidayMultiplier;
 
   return {
     regularMinutes,
     overtimeMinutes,
+    holidayMinutes,
     regularPay,
     overtimePay,
+    holidayPay,
     lunchAllowance,
-    totalPay: regularPay + overtimePay + lunchAllowance,
+    totalPay: regularPay + overtimePay + holidayPay + lunchAllowance,
   };
 }

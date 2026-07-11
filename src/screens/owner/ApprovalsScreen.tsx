@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import type { ApprovalRequest } from '../../types';
+import type { ApprovalRequest, SwapRequest } from '../../types';
 
 export default function ApprovalsScreen() {
   const { profile } = useAuth();
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
+  const [swaps, setSwaps] = useState<SwapRequest[]>([]);
 
   async function load() {
     if (!profile) return;
+
     const { data, error } = await supabase
       .from('approval_requests')
       .select('*')
@@ -32,6 +34,27 @@ export default function ApprovalsScreen() {
         }))
       );
     }
+
+    const { data: swapData } = await supabase
+      .from('swap_requests')
+      .select('*')
+      .eq('owner_id', profile.id)
+      .eq('status', 'accepted');
+
+    if (swapData) {
+      setSwaps(
+        swapData.map((row: any) => ({
+          id: row.id,
+          scheduleId: row.schedule_id,
+          ownerId: row.owner_id,
+          requestingStaffId: row.requesting_staff_id,
+          targetStaffId: row.target_staff_id,
+          acceptedByStaffId: row.accepted_by_staff_id,
+          status: row.status,
+          createdAt: row.created_at,
+        }))
+      );
+    }
   }
 
   useEffect(() => {
@@ -39,6 +62,7 @@ export default function ApprovalsScreen() {
     const channel = supabase
       .channel('owner-approvals')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'approval_requests' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'swap_requests' }, load)
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -48,6 +72,26 @@ export default function ApprovalsScreen() {
   async function respond(id: string, status: 'approved' | 'denied') {
     const { error } = await supabase.from('approval_requests').update({ status }).eq('id', id);
     if (error) Alert.alert('Failed', error.message);
+  }
+
+  async function respondToSwap(swap: SwapRequest, approve: boolean) {
+    if (approve && swap.acceptedByStaffId) {
+      const { error: scheduleError } = await supabase
+        .from('shift_schedule')
+        .update({ staff_id: swap.acceptedByStaffId })
+        .eq('id', swap.scheduleId);
+      if (scheduleError) {
+        Alert.alert('Failed', scheduleError.message);
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from('swap_requests')
+      .update({ status: approve ? 'owner_approved' : 'denied' })
+      .eq('id', swap.id);
+    if (error) Alert.alert('Failed', error.message);
+    else load();
   }
 
   return (
@@ -67,6 +111,24 @@ export default function ApprovalsScreen() {
               <Text style={styles.actionText}>Approve</Text>
             </Pressable>
             <Pressable style={styles.deny} onPress={() => respond(item.id, 'denied')}>
+              <Text style={styles.actionText}>Deny</Text>
+            </Pressable>
+          </View>
+        )}
+      />
+
+      <Text style={styles.title}>Shift swaps awaiting your OK</Text>
+      <FlatList
+        data={swaps}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={<Text style={styles.empty}>None pending.</Text>}
+        renderItem={({ item }) => (
+          <View style={styles.row}>
+            <Text style={{ flex: 1 }}>A coworker accepted a shift swap</Text>
+            <Pressable style={styles.approve} onPress={() => respondToSwap(item, true)}>
+              <Text style={styles.actionText}>Approve</Text>
+            </Pressable>
+            <Pressable style={styles.deny} onPress={() => respondToSwap(item, false)}>
               <Text style={styles.actionText}>Deny</Text>
             </Pressable>
           </View>

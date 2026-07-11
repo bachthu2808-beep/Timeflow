@@ -7,6 +7,7 @@ const rules: PayRuleSet = {
   overtimeTiers: [{ afterMinutes: 8 * 60, multiplier: 1.5 }],
   unpaidLunchMinutes: 30,
   roundingMinutes: 5,
+  holidayMultiplier: 2,
 };
 
 const noRoundingRules: PayRuleSet = { ...rules, roundingMinutes: 0 };
@@ -97,6 +98,61 @@ describe('calculatePay - hourly', () => {
 
     expect(result.regularMinutes).toBe(90);
     expect(result.regularPay).toBe(45); // 1.5h * $30
+  });
+});
+
+describe('calculatePay - split shifts', () => {
+  it('pools minutes across multiple shifts the same day for overtime purposes', () => {
+    // Two 5h shifts same day = 10h total, should trigger 2h of OT, not be
+    // treated as two independent 5h shifts each under the 8h threshold.
+    const result = calculatePay({
+      basis: 'hourly',
+      hourlyRate: 20,
+      shifts: [
+        { clockInMinutes: 0, clockOutMinutes: 5 * 60, paidLunch: true },
+        { clockInMinutes: 600, clockOutMinutes: 600 + 5 * 60, paidLunch: true },
+      ],
+      rules: noRoundingRules,
+    });
+
+    expect(result.regularMinutes).toBe(480);
+    expect(result.overtimeMinutes).toBe(120);
+    expect(result.overtimePay).toBe(60); // 2h * $20 * 1.5
+  });
+});
+
+describe('calculatePay - holiday shifts', () => {
+  it('pays holiday shift minutes at the flat holiday multiplier, bypassing overtime tiers', () => {
+    const result = calculatePay({
+      basis: 'hourly',
+      hourlyRate: 20,
+      shifts: [{ clockInMinutes: 0, clockOutMinutes: 10 * 60, paidLunch: true, isHoliday: true }],
+      rules: noRoundingRules,
+    });
+
+    expect(result.holidayMinutes).toBe(600);
+    expect(result.holidayPay).toBe(400); // 10h * $20 * 2
+    expect(result.regularMinutes).toBe(0);
+    expect(result.overtimeMinutes).toBe(0);
+    expect(result.totalPay).toBe(400);
+  });
+
+  it('keeps holiday and non-holiday shifts in separate pools within the same period', () => {
+    const result = calculatePay({
+      basis: 'hourly',
+      hourlyRate: 20,
+      shifts: [
+        { clockInMinutes: 0, clockOutMinutes: 4 * 60, paidLunch: true, isHoliday: false },
+        { clockInMinutes: 1000, clockOutMinutes: 1000 + 4 * 60, paidLunch: true, isHoliday: true },
+      ],
+      rules: noRoundingRules,
+    });
+
+    expect(result.regularMinutes).toBe(240);
+    expect(result.holidayMinutes).toBe(240);
+    expect(result.regularPay).toBe(80);
+    expect(result.holidayPay).toBe(160); // 4h * $20 * 2
+    expect(result.totalPay).toBe(240);
   });
 });
 

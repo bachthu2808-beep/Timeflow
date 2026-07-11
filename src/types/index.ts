@@ -12,6 +12,8 @@ export interface Profile {
   monthlyRate: number | null;
   lunchAllowancePerShift: number;
   payRuleSetId: string;
+  defaultShopId: string | null;
+  expoPushToken: string | null;
 }
 
 export interface Shop {
@@ -21,6 +23,7 @@ export interface Shop {
   latitude: number;
   longitude: number;
   geofenceRadiusMeters: number;
+  dailyLaborBudget: number | null;
 }
 
 export type ShiftStatus = 'active' | 'completed';
@@ -32,7 +35,10 @@ export interface ShiftRecord {
   clockInAt: string; // ISO timestamp
   clockOutAt: string | null;
   paidLunch: boolean;
+  isHoliday: boolean;
   status: ShiftStatus;
+  mockedLocation: boolean;
+  clockInPhotoUrl: string | null;
 }
 
 export type ApprovalKind = 'time_off' | 'schedule_change';
@@ -56,4 +62,49 @@ export interface PayPeriod {
   periodStart: string;
   periodEnd: string;
   status: 'open' | 'processing' | 'paid';
+}
+
+export type ScheduleStatus = 'scheduled' | 'completed' | 'cancelled';
+
+export interface ScheduledShift {
+  id: string;
+  ownerId: string;
+  shopId: string;
+  staffId: string;
+  startsAt: string;
+  endsAt: string;
+  status: ScheduleStatus;
+}
+
+export type SwapStatus = 'open' | 'accepted' | 'owner_approved' | 'denied' | 'cancelled';
+
+export interface SwapRequest {
+  id: string;
+  scheduleId: string;
+  ownerId: string;
+  requestingStaffId: string;
+  targetStaffId: string | null;
+  acceptedByStaffId: string | null;
+  status: SwapStatus;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  ownerId: string;
+  staffId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  ownerId: string;
+  actorId: string | null;
+  action: string;
+  entityType: string;
+  entityId: string;
+  detail: Record<string, unknown> | null;
+  createdAt: string;
 }

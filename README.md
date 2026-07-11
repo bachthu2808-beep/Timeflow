@@ -1,8 +1,9 @@
 # TimeFlow
 
 Real-time HR & payroll for small shops/cafes. One app, two roles — owners get a
-live overview of who's clocked in, staff roster, approvals, and payroll runs;
-employees get geofenced clock-in/out, a live earnings ticker, and payslips.
+live overview of who's clocked in, staff roster, approvals, payroll runs,
+rota building, and an audit log; employees get geofenced clock-in/out, a live
+earnings ticker, payslips, scheduling, shift swaps, and in-app chat.
 
 ## Stack
 
@@ -12,33 +13,39 @@ employees get geofenced clock-in/out, a live earnings ticker, and payslips.
   Level Security). Owner/employee data isolation is enforced at the database
   layer via RLS, not hand-rolled checks in app code — see `supabase/schema.sql`.
 - **Sync**: Supabase Realtime channels (`postgres_changes`). An owner
-  approving a request or an employee clocking in is pushed to the other
-  device live, no polling.
+  approving a request, a swap being offered, or an employee clocking in is
+  pushed to the other device live, no polling.
 - **Location**: `expo-location`, foreground-only (checked at the moment of
   Clock In / Clock Out, not tracked continuously in the background). This
-  keeps App Store / Play Store review simple — background location access
-  triggers extra scrutiny and a separate policy form on both stores. If you
-  later need automatic geofence-triggered clock-in (no tap required), that
-  needs `react-native-background-geolocation` and the heavier store
-  justification — deliberately deferred.
+  keeps App Store / Play Store review simpler than background-geofencing
+  apps — deliberately deferred, see "Known limitations" below.
 
 ## Project layout
 
 ```
 src/
-  payroll/         Pluggable pay-rule engine (calculatePay, payRules) — pure
-                    functions, fully unit tested, no market hardcoded.
-  lib/              Supabase client, geofence distance math.
-  types/            Shared TypeScript types mirroring the DB schema.
-  context/          AuthContext — session + profile (role) from Supabase Auth.
-  navigation/       RootNavigator picks OwnerTabs or EmployeeTabs by role.
+  payroll/          Pluggable pay-rule engine and every pure, unit-tested
+                     calculation: calculatePay, payRules, streaks (attendance
+                     gamification), laborCost (dashboard alert), csv (payroll
+                     export), payslipHtml (PDF export).
+  lib/               Supabase client, geofence distance math, offline
+                     clock-in/out queue, push notification registration.
+  types/             Shared TypeScript types mirroring the DB schema.
+  context/           AuthContext — session + profile (role) from Supabase Auth.
+  navigation/        RootNavigator picks OwnerTabs or EmployeeTabs by role.
   screens/
-    auth/           Login.
-    owner/           Dashboard (live "who's clocked in"), Roster, Approvals,
-                     Payroll runs.
-    employee/        Clock in/out with live earnings, Payslip, History.
+    auth/            Login.
+    owner/            Dashboard (live "who's clocked in" + labor-cost alert),
+                       Schedule (rota builder), Roster, Approvals (time-off +
+                       swap sign-off), Payroll runs (CSV export), Chat,
+                       Audit log.
+    employee/          Clock in/out (offline-queued, photo capture, spoofed-
+                       GPS flagging), Schedule (view + offer/accept swaps),
+                       Payslip (PDF export), History, Chat.
+    shared/            ChatThreadScreen, used by both roles.
 supabase/
-  schema.sql        Tables + RLS policies + Realtime publication setup.
+  schema.sql         Tables, RLS policies, audit-log triggers, storage bucket
+                     policy for clock-in photos, Realtime publication setup.
 ```
 
 ## Setup
@@ -48,9 +55,7 @@ supabase/
 2. `cp .env.example .env` and fill in your project's URL + anon key.
 3. `npm install`
 4. `npm start` — scan the QR with Expo Go, or run `npm run ios` / `npm run
-   android` with a dev client (needed once native modules like
-   `expo-location` require a custom build; plain Expo Go works for early UI
-   iteration).
+   android` with a dev client.
 
 ## Testing
 
@@ -58,27 +63,45 @@ supabase/
 npx jest
 ```
 
-The payroll engine (`src/payroll/calculatePay.ts`) and geofence math
-(`src/lib/geofence.ts`) are pure functions with full unit test coverage —
-run these before changing pay logic, since a payroll bug is a trust-breaking
-bug.
+Every pure calculation in `src/payroll/` and `src/lib/geofence.ts` +
+`src/lib/offlineQueue.ts` has full unit test coverage (35 tests) — run these
+before changing pay logic, since a payroll bug is a trust-breaking bug.
 
-## What's scaffolded vs. what's next
+## Feature status
 
-Done: auth flow, role-based navigation, live owner dashboard (Realtime
-subscription), approvals with respond actions, employee clock in/out with
-geofence check and live earnings ticker, payslip breakdown by range, shift
-history, RLS-secured schema.
+**Built and tested this round:**
+- Holiday pay + split-shift overtime pooling in `calculatePay`
+- Attendance streaks (on-time gamification badge)
+- Owner labor-cost alert banner (vs. a per-shop daily budget)
+- Offline clock-in/out queue (AsyncStorage-backed, syncs on reconnect)
+- Payroll CSV export, payslip PDF export
+- Audit log (Postgres-trigger based — can't be bypassed by an app bug)
+- Rota builder (owner) + shift swap marketplace (offer → accept → owner
+  approval)
+- Multi-location groundwork (`shops.daily_labor_budget`,
+  `profiles.default_shop_id`)
+- In-app chat (owner ↔ each employee)
+- Clock-in photo capture (owner-reviewable, stored in Supabase Storage)
+- Best-effort spoofed-GPS flagging (Android `mocked` signal, surfaced to the
+  owner rather than hard-blocking clock-in)
+- Push notification token registration
 
-Not yet built (marked with `TODO` in the relevant screen):
-- Add-staff form on the Roster screen (invite by email, set pay basis/rate).
-- "Run payroll" action that aggregates `calculatePay()` across all staff for
-  a period and writes a `pay_periods` row.
-- Loading the owner's actual shop location into `ClockScreen` instead of the
-  placeholder coordinates.
-- A configured `PayRuleSet` per owner (currently every screen falls back to
-  `GENERIC_PAY_RULES` — replace once the target market/country is decided;
-  the engine itself already supports multi-tier overtime, rounding, and
-  paid-vs-unpaid lunch per rule set without code changes).
-- Push notifications (FCM/APNs) for late clock-ins, missed clock-outs, and
-  new approval requests.
+**Known limitations — deliberately not built:**
+- **True face-match verification.** Photo capture at clock-in is real; an
+  automated identity check against it is not — that needs a paid biometric
+  API (AWS Rekognition, Face++, etc.). Current MVP is capture + owner
+  review.
+- **Push notification delivery.** Token registration is wired up, but
+  actually *sending* a push (late clock-in, new approval, etc.) requires a
+  server-side sender — a Supabase Edge Function calling the Expo push API —
+  which needs to be deployed against your own Supabase project.
+- **WiFi/Bluetooth geofence fallback.** GPS-only. Indoor accuracy fallback
+  needs native modules outside Expo Go's managed workflow (a custom dev
+  client build).
+- **iOS spoofed-location detection.** The `mocked` flag is Android-only.
+- A configured `PayRuleSet` per owner — every screen still falls back to
+  `GENERIC_PAY_RULES`. Swap in a real rule set once the launch market/country
+  is decided; the engine already supports multi-tier overtime, rounding,
+  holiday pay, and paid-vs-unpaid lunch without further code changes.
+- Add-staff form on the Roster screen (invite by email, set pay basis/rate) —
+  staff rows must currently be created directly in Supabase.

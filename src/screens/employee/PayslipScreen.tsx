@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { calculatePay } from '../../payroll/calculatePay';
 import { GENERIC_PAY_RULES } from '../../payroll/payRules';
+import { buildPayslipHtml } from '../../payroll/payslipHtml';
 import type { PayResult } from '../../payroll/calculatePay';
 
 type Range = 'today' | 'week' | 'month';
@@ -63,6 +66,15 @@ export default function PayslipScreen() {
     };
   }, [profile, range]);
 
+  async function exportPdf() {
+    if (!result || !profile) return;
+    const html = buildPayslipHtml({ staffName: profile.fullName, rangeLabel: range, result });
+    const { uri } = await Print.printToFileAsync({ html });
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Payslip' });
+    }
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.tabs}>
@@ -78,12 +90,18 @@ export default function PayslipScreen() {
       </View>
 
       {result ? (
-        <View style={styles.breakdown}>
-          <Row label="Regular pay" value={result.regularPay} />
-          <Row label="Overtime pay" value={result.overtimePay} />
-          <Row label="Lunch allowance" value={result.lunchAllowance} />
-          <Row label="Total" value={result.totalPay} bold />
-        </View>
+        <>
+          <View style={styles.breakdown}>
+            <Row label="Regular pay" value={result.regularPay} />
+            <Row label="Overtime pay" value={result.overtimePay} />
+            <Row label="Holiday pay" value={result.holidayPay} />
+            <Row label="Lunch allowance" value={result.lunchAllowance} />
+            <Row label="Total" value={result.totalPay} bold />
+          </View>
+          <Pressable style={styles.exportButton} onPress={exportPdf}>
+            <Text style={styles.exportButtonText}>Export PDF</Text>
+          </Pressable>
+        </>
       ) : (
         <Text>Loading…</Text>
       )}
@@ -111,4 +129,6 @@ const styles = StyleSheet.create({
   rowValue: { color: '#111' },
   rowLabelBold: { fontWeight: '700', fontSize: 18 },
   rowValueBold: { fontWeight: '700', fontSize: 18 },
+  exportButton: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center' },
+  exportButtonText: { color: '#fff', fontWeight: '600' },
 });
