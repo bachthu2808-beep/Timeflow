@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
+import { colors, radii, shadow, spacing } from '../../theme';
 
 type Mode = 'owner' | 'employee';
 
@@ -113,17 +114,17 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  modeRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 8 },
-  modeChip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
-  modeChipSelected: { backgroundColor: '#111', borderColor: '#111' },
-  modeText: { color: '#111' },
+  container: { flex: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.md, backgroundColor: colors.background },
+  title: { fontSize: 24, fontWeight: '800', marginBottom: spacing.sm, textAlign: 'center', color: colors.textPrimary },
+  modeRow: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', marginBottom: spacing.sm },
+  modeChip: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 14 },
+  modeChipSelected: { backgroundColor: colors.brand, borderColor: colors.brand },
+  modeText: { color: colors.textPrimary },
   modeTextSelected: { color: '#fff' },
-  hint: { color: '#888', fontSize: 13, textAlign: 'center', marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 16 },
-  button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  error: { color: '#c00' },
-  link: { color: '#06c', textAlign: 'center', marginTop: 12 },
+  hint: { color: colors.textMuted, fontSize: 13, textAlign: 'center', marginBottom: spacing.sm },
+  input: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, padding: spacing.md, fontSize: 16, backgroundColor: colors.surface, color: colors.textPrimary },
+  button: { backgroundColor: colors.brand, borderRadius: radii.sm, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm, ...shadow },
+  buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  error: { color: colors.danger },
+  link: { color: colors.link, textAlign: 'center', marginTop: spacing.md },
 });

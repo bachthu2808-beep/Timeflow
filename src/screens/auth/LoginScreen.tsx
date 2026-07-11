@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import LanguageToggle from '../../components/LanguageToggle';
+import { colors, radii, shadow, spacing } from '../../theme';
 
 interface Props {
   onSignUp: () => void;
@@ -58,12 +59,12 @@ export default function LoginScreen({ onSignUp }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
+  container: { flex: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.md, backgroundColor: colors.background },
   languageRow: { position: 'absolute', top: 60, right: 12, flexDirection: 'row' },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 16 },
-  button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  error: { color: '#c00' },
-  link: { color: '#06c', textAlign: 'center', marginTop: 16 },
+  title: { fontSize: 30, fontWeight: '800', marginBottom: spacing.xl, textAlign: 'center', color: colors.brand },
+  input: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, padding: spacing.md, fontSize: 16, backgroundColor: colors.surface, color: colors.textPrimary },
+  button: { backgroundColor: colors.brand, borderRadius: radii.sm, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm, ...shadow },
+  buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  error: { color: colors.danger },
+  link: { color: colors.link, textAlign: 'center', marginTop: spacing.lg },
 });

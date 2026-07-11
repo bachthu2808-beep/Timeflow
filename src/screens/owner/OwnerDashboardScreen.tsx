@@ -7,11 +7,11 @@ import { estimateLaborCost } from '../../payroll/laborCost';
 import { computeWeeklyLaborCost } from '../../payroll/weeklyLaborCost';
 import { computeAttendanceSummary } from '../../payroll/attendance';
 import { formatCurrency } from '../../lib/currency';
-import { avatarColorFor, initialsFor } from '../../lib/avatarColor';
 import StatCard from '../../components/StatCard';
 import WeeklyBarChart from '../../components/WeeklyBarChart';
 import Avatar from '../../components/Avatar';
 import SectionLabel from '../../components/SectionLabel';
+import { usePendingApprovalsCount } from '../../hooks/usePendingApprovalsCount';
 import { colors, radii, shadow, spacing } from '../../theme';
 
 interface ActiveStaffRow {
@@ -51,7 +51,7 @@ export default function OwnerDashboardScreen() {
   const [budget, setBudget] = useState<number | null>(null);
   const [weeklyCosts, setWeeklyCosts] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
   const [attendance, setAttendance] = useState({ present: 0, absent: 0, late: 0, onLeave: 0 });
-  const [pendingCount, setPendingCount] = useState(0);
+  const pendingCount = usePendingApprovalsCount();
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -166,18 +166,6 @@ export default function OwnerDashboardScreen() {
         )
       );
     }
-
-    const { count: approvalsCount } = await supabase
-      .from('approval_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('owner_id', profile.id)
-      .eq('status', 'pending');
-    const { count: swapsCount } = await supabase
-      .from('swap_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('owner_id', profile.id)
-      .eq('status', 'accepted');
-    setPendingCount((approvalsCount ?? 0) + (swapsCount ?? 0));
   }
 
   useEffect(() => {

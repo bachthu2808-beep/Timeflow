@@ -97,6 +97,20 @@ Change `com.timeflow.app` in `app.json` (`ios.bundleIdentifier` /
 `android.package`) to your own identifier before building if you plan to
 eventually publish under your own name.
 
+## Design system & localization
+
+The UI follows a reference design: forest-green brand color, pale-mint
+background, dark "hero" cards for the labor-cost banner, pastel avatar
+chips, and tabular/monospace figures for money and time. Tokens live in
+`src/theme/`; shared components (`Avatar`, `StatCard`, `SectionLabel`,
+`WeeklyBarChart`) live in `src/components/`.
+
+The app is fully localized in **English and Vietnamese** (`src/i18n/`),
+with a language toggle in every screen header and automatic device-language
+detection on first launch. Currency is formatted as Vietnamese Dong
+(`formatCurrency` in `src/lib/currency.ts`) — dot thousand separators, no
+decimals, "đ" suffix — matching the reference design.
+
 ## Testing
 
 ```
@@ -104,12 +118,20 @@ npx jest
 ```
 
 Every pure calculation in `src/payroll/` and `src/lib/geofence.ts` +
-`src/lib/offlineQueue.ts` has full unit test coverage (35 tests) — run these
+`src/lib/offlineQueue.ts` has full unit test coverage (54 tests) — run these
 before changing pay logic, since a payroll bug is a trust-breaking bug.
 
 ## Feature status
 
 **Built and tested this round:**
+- Full visual redesign to match the reference mockups (color system,
+  typography, avatars, cards) — see "Design system" above
+- English + Vietnamese localization with a persisted language switcher
+- Present / Absent / Late / On-leave attendance dashboard, cross-referencing
+  the rota against actual clock-ins and approved leave
+- Weekly labor-cost trend chart (Mon–Sun)
+- Job titles per staff member, staff search, tap-to-edit-pay
+- Store open/closed toggle
 - Owner and employee sign-up (email invitation flow, DB-enforced via
   security-definer Postgres functions so a client can't fabricate
   `owner_id`)

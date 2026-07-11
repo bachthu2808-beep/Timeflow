@@ -8,6 +8,8 @@ import { supabase } from '../../lib/supabase';
 import { calculatePay } from '../../payroll/calculatePay';
 import { GENERIC_PAY_RULES } from '../../payroll/payRules';
 import { buildPayslipHtml } from '../../payroll/payslipHtml';
+import { formatCurrency } from '../../lib/currency';
+import { colors, radii, shadow, spacing } from '../../theme';
 import type { PayResult } from '../../payroll/calculatePay';
 
 type Range = 'today' | 'week' | 'month';
@@ -70,7 +72,19 @@ export default function PayslipScreen() {
 
   async function exportPdf() {
     if (!result || !profile) return;
-    const html = buildPayslipHtml({ staffName: profile.fullName, rangeLabel: t(`employee.payslip.range.${range}`), result });
+    const html = buildPayslipHtml({
+      staffName: profile.fullName,
+      rangeLabel: t(`employee.payslip.range.${range}`),
+      result,
+      labels: {
+        title: t('employee.payslip.title'),
+        regularPay: t('employee.payslip.regularPay'),
+        overtimePay: t('employee.payslip.overtimePay'),
+        holidayPay: t('employee.payslip.holidayPay'),
+        lunchAllowance: t('employee.payslip.lunchAllowance'),
+        total: t('employee.payslip.total'),
+      },
+    });
     const { uri } = await Print.printToFileAsync({ html });
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: t('employee.payslip.title') });
@@ -105,7 +119,7 @@ export default function PayslipScreen() {
           </Pressable>
         </>
       ) : (
-        <Text>{t('common.loading')}</Text>
+        <Text style={styles.loading}>{t('common.loading')}</Text>
       )}
     </View>
   );
@@ -115,22 +129,23 @@ function Row({ label, value, bold }: { label: string; value: number; bold?: bool
   return (
     <View style={styles.row}>
       <Text style={bold ? styles.rowLabelBold : styles.rowLabel}>{label}</Text>
-      <Text style={bold ? styles.rowValueBold : styles.rowValue}>${value.toFixed(2)}</Text>
+      <Text style={bold ? styles.rowValueBold : styles.rowValue}>{formatCurrency(value)}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 24 },
-  tabs: { flexDirection: 'row', gap: 12 },
-  tab: { textTransform: 'capitalize', color: '#888', paddingBottom: 6 },
-  tabActive: { color: '#111', fontWeight: '600', borderBottomWidth: 2, borderBottomColor: '#111' },
-  breakdown: { gap: 12 },
+  container: { flex: 1, padding: spacing.xl, gap: spacing.xl, backgroundColor: colors.background },
+  tabs: { flexDirection: 'row', gap: spacing.lg },
+  tab: { textTransform: 'capitalize', color: colors.textMuted, paddingBottom: 6, fontWeight: '600' },
+  tabActive: { color: colors.brand, borderBottomWidth: 2, borderBottomColor: colors.brand },
+  loading: { color: colors.textMuted },
+  breakdown: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.md, ...shadow },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
-  rowLabel: { color: '#555' },
-  rowValue: { color: '#111' },
-  rowLabelBold: { fontWeight: '700', fontSize: 18 },
-  rowValueBold: { fontWeight: '700', fontSize: 18 },
-  exportButton: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center' },
-  exportButtonText: { color: '#fff', fontWeight: '600' },
+  rowLabel: { color: colors.textSecondary },
+  rowValue: { color: colors.textPrimary, fontFamily: 'monospace' },
+  rowLabelBold: { fontWeight: '700', fontSize: 18, color: colors.textPrimary },
+  rowValueBold: { fontWeight: '700', fontSize: 18, color: colors.brand, fontFamily: 'monospace' },
+  exportButton: { backgroundColor: colors.brand, borderRadius: radii.sm, padding: spacing.md, alignItems: 'center' },
+  exportButtonText: { color: '#fff', fontWeight: '700' },
 });

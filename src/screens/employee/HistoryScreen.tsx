@@ -3,6 +3,7 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { colors, radii, shadow, spacing } from '../../theme';
 import type { ShiftRecord } from '../../types';
 
 export default function HistoryScreen() {
@@ -39,31 +40,32 @@ export default function HistoryScreen() {
   }, [profile]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{t('employee.history.title')}</Text>
-      <FlatList
-        data={shifts}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>{t('employee.history.noShiftsYet')}</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text style={styles.date}>{new Date(item.clockInAt).toLocaleDateString()}</Text>
-            <Text style={styles.time}>
-              {new Date(item.clockInAt).toLocaleTimeString()} –{' '}
-              {item.clockOutAt ? new Date(item.clockOutAt).toLocaleTimeString() : t('employee.history.active')}
-            </Text>
-          </View>
-        )}
-      />
-    </View>
+    <FlatList
+      style={styles.screen}
+      data={shifts}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContent}
+      ListHeaderComponent={<Text style={styles.title}>{t('employee.history.title')}</Text>}
+      ListEmptyComponent={<Text style={styles.empty}>{t('employee.history.noShiftsYet')}</Text>}
+      renderItem={({ item }) => (
+        <View style={styles.card}>
+          <Text style={styles.date}>{new Date(item.clockInAt).toLocaleDateString()}</Text>
+          <Text style={styles.time}>
+            {new Date(item.clockInAt).toLocaleTimeString()} –{' '}
+            {item.clockOutAt ? new Date(item.clockOutAt).toLocaleTimeString() : t('employee.history.active')}
+          </Text>
+        </View>
+      )}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 16 },
-  title: { fontSize: 22, fontWeight: '700' },
-  empty: { color: '#888', marginTop: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  date: { fontWeight: '600' },
-  time: { color: '#888' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  listContent: { padding: spacing.lg, gap: spacing.xs },
+  title: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
+  empty: { color: colors.textMuted },
+  card: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.xs, ...shadow },
+  date: { fontWeight: '700', color: colors.textPrimary },
+  time: { color: colors.textMuted, fontFamily: 'monospace', fontSize: 13 },
 });

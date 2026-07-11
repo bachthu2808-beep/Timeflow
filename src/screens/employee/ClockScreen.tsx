@@ -11,6 +11,8 @@ import { enqueue, flushQueue, getQueueLength } from '../../lib/offlineQueue';
 import { calculatePay } from '../../payroll/calculatePay';
 import { calculateOnTimeStreak } from '../../payroll/streaks';
 import { GENERIC_PAY_RULES } from '../../payroll/payRules';
+import { formatCurrency } from '../../lib/currency';
+import { colors, radii, shadow, spacing } from '../../theme';
 import type { ShiftRecord, Shop } from '../../types';
 
 async function uploadClockInPhoto(staffId: string, uri: string): Promise<string | null> {
@@ -249,13 +251,23 @@ export default function ClockScreen() {
 
   return (
     <View style={styles.container}>
-      {streak > 1 ? <Text style={styles.streak}>{t('employee.clock.streak', { count: streak })}</Text> : null}
-      {pendingCount > 0 ? <Text style={styles.pending}>{t('employee.clock.pendingSync', { count: pendingCount })}</Text> : null}
+      <View style={styles.badgeStack}>
+        {streak > 1 ? (
+          <View style={styles.streakBadge}>
+            <Text style={styles.streakText}>{t('employee.clock.streak', { count: streak })}</Text>
+          </View>
+        ) : null}
+        {pendingCount > 0 ? (
+          <View style={styles.pendingBadge}>
+            <Text style={styles.pendingText}>{t('employee.clock.pendingSync', { count: pendingCount })}</Text>
+          </View>
+        ) : null}
+      </View>
 
       {activeShift ? (
         <>
           <Text style={styles.label}>{t('employee.clock.currentlyClockedIn')}</Text>
-          <Text style={styles.earnings}>${livePay?.totalPay.toFixed(2) ?? '0.00'}</Text>
+          <Text style={styles.earnings}>{formatCurrency(livePay?.totalPay ?? 0)}</Text>
           <Pressable style={[styles.button, styles.buttonDanger]} onPress={handleClockOut} disabled={busy}>
             <Text style={styles.buttonText}>{t('employee.clock.clockOut')}</Text>
           </Pressable>
@@ -273,12 +285,15 @@ export default function ClockScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 16 },
-  label: { fontSize: 16, color: '#555' },
-  earnings: { fontSize: 48, fontWeight: '700' },
-  streak: { position: 'absolute', top: 24, fontSize: 14, color: '#c65' },
-  pending: { position: 'absolute', top: 48, fontSize: 12, color: '#888' },
-  button: { backgroundColor: '#111', borderRadius: 999, paddingVertical: 16, paddingHorizontal: 40 },
-  buttonDanger: { backgroundColor: '#c00' },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 18 },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl, gap: spacing.lg, backgroundColor: colors.background },
+  label: { fontSize: 16, color: colors.textSecondary },
+  earnings: { fontSize: 44, fontWeight: '800', color: colors.textPrimary, fontFamily: 'monospace' },
+  badgeStack: { position: 'absolute', top: 32, alignItems: 'center', gap: spacing.xs },
+  streakBadge: { backgroundColor: colors.statusLateBg, borderRadius: radii.pill, paddingVertical: 6, paddingHorizontal: 14 },
+  streakText: { color: colors.statusLate, fontWeight: '700', fontSize: 13 },
+  pendingBadge: { backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 4, paddingHorizontal: 12, ...shadow },
+  pendingText: { color: colors.textMuted, fontSize: 11, fontWeight: '600' },
+  button: { backgroundColor: colors.brand, borderRadius: radii.pill, paddingVertical: 18, paddingHorizontal: 48, ...shadow },
+  buttonDanger: { backgroundColor: colors.danger },
+  buttonText: { color: '#fff', fontWeight: '700', fontSize: 18 },
 });

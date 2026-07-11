@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import SectionLabel from '../../components/SectionLabel';
+import { colors, radii, shadow, spacing } from '../../theme';
 import type { ScheduledShift, SwapRequest } from '../../types';
 
 export default function EmployeeScheduleScreen() {
@@ -92,14 +94,13 @@ export default function EmployeeScheduleScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{t('employee.schedule.upcomingShifts')}</Text>
-      <FlatList
-        data={schedule}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>{t('owner.schedule.nothingScheduled')}</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+      <SectionLabel>{t('employee.schedule.upcomingShifts')}</SectionLabel>
+      {schedule.length === 0 ? (
+        <Text style={styles.empty}>{t('owner.schedule.nothingScheduled')}</Text>
+      ) : (
+        schedule.map((item) => (
+          <View key={item.id} style={styles.card}>
             <Text style={styles.time}>
               {new Date(item.startsAt).toLocaleString()} – {new Date(item.endsAt).toLocaleTimeString()}
             </Text>
@@ -107,32 +108,31 @@ export default function EmployeeScheduleScreen() {
               <Text style={styles.offer}>{t('employee.schedule.offerSwap')}</Text>
             </Pressable>
           </View>
-        )}
-      />
+        ))
+      )}
 
-      <Text style={styles.title}>{t('employee.schedule.openSwaps')}</Text>
-      <FlatList
-        data={openSwaps}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.empty}>{t('employee.schedule.noOpenSwaps')}</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text>{t('employee.schedule.swapRequest')}</Text>
+      <SectionLabel>{t('employee.schedule.openSwaps')}</SectionLabel>
+      {openSwaps.length === 0 ? (
+        <Text style={styles.empty}>{t('employee.schedule.noOpenSwaps')}</Text>
+      ) : (
+        openSwaps.map((item) => (
+          <View key={item.id} style={styles.card}>
+            <Text style={{ color: colors.textPrimary }}>{t('employee.schedule.swapRequest')}</Text>
             <Pressable onPress={() => acceptSwap(item)}>
               <Text style={styles.offer}>{t('common.accept')}</Text>
             </Pressable>
           </View>
-        )}
-      />
-    </View>
+        ))
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 12 },
-  title: { fontSize: 20, fontWeight: '700', marginTop: 8 },
-  empty: { color: '#888' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  time: { fontWeight: '600' },
-  offer: { color: '#06c', fontWeight: '600' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  container: { padding: spacing.lg, gap: spacing.sm },
+  empty: { color: colors.textMuted, marginBottom: spacing.md },
+  card: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow },
+  time: { fontWeight: '700', color: colors.textPrimary, fontFamily: 'monospace' },
+  offer: { color: colors.link, fontWeight: '700' },
 });

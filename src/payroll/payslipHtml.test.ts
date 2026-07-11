@@ -19,10 +19,10 @@ describe('buildPayslipHtml', () => {
 
     expect(html).toContain('Jane Doe');
     expect(html).toContain('week');
-    expect(html).toContain('160.00');
-    expect(html).toContain('22.50');
-    expect(html).toContain('10.00');
-    expect(html).toContain('192.50');
+    expect(html).toContain('160 đ');
+    expect(html).toContain('23 đ'); // 22.5 rounds to 23
+    expect(html).toContain('10 đ');
+    expect(html).toContain('193 đ'); // 192.5 rounds to 193
   });
 
   it('escapes HTML-significant characters in the staff name', () => {
