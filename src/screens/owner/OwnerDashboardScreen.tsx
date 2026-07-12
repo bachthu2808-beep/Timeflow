@@ -195,7 +195,7 @@ export default function OwnerDashboardScreen() {
     }
 
     const monthStart = startOfMonth();
-    const elapsedDays = now.getDate();
+    const elapsedDays = new Date().getDate();
     const { data: monthShifts } = await supabase
       .from('shifts')
       .select('clock_in_at, clock_out_at, profiles(hourly_rate, owner_id)')
