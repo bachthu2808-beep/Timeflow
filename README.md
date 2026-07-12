@@ -106,8 +106,9 @@ chips, and tabular/monospace figures for money and time. Tokens live in
 `WeeklyBarChart`) live in `src/components/`.
 
 The app is fully localized in **English and Vietnamese** (`src/i18n/`),
-with a language toggle in every screen header and automatic device-language
-detection on first launch. Currency is formatted as Vietnamese Dong
+defaulting to Vietnamese, with a language toggle in every screen header to
+switch to English (the choice persists across launches). Currency is
+formatted as Vietnamese Dong
 (`formatCurrency` in `src/lib/currency.ts`) — dot thousand separators, no
 decimals, "đ" suffix — matching the reference design.
 
