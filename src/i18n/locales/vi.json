@@ -80,7 +80,17 @@
       "lateTag": "Trễ",
       "onTimeTag": "Đúng giờ",
       "noOneClockedIn": "Hiện chưa có ai chấm công.",
-      "since": "từ {{time}}"
+      "since": "từ {{time}}",
+      "live": "Trực tiếp",
+      "ofStaff": "trong {{count}} nhân viên",
+      "view": "Xem",
+      "payrollBudgetAccrued": "Chi phí lương lũy kế",
+      "monthToDate": "Từ đầu tháng · cập nhật mỗi lần chấm công ra",
+      "ofBudget": "trong ngân sách {{amount}} · {{percent}}%",
+      "lateToday": "Đi trễ hôm nay",
+      "flagged": "{{count}} bị gắn cờ",
+      "noLateToday": "Hôm nay không có ai đi trễ",
+      "clockedInAt": "Chấm công lúc {{time}}"
     },
     "shop": {
       "settingsTitle": "Cài đặt quán",

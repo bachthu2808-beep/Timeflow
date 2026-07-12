@@ -81,7 +81,17 @@
       "lateTag": "Late",
       "onTimeTag": "On time",
       "noOneClockedIn": "No one is currently clocked in.",
-      "since": "since {{time}}"
+      "since": "since {{time}}",
+      "live": "Live",
+      "ofStaff": "of {{count}} staff",
+      "view": "View",
+      "payrollBudgetAccrued": "Payroll budget accrued",
+      "monthToDate": "Month-to-date · updates on every check-out",
+      "ofBudget": "of {{amount}} budget · {{percent}}%",
+      "lateToday": "Late today",
+      "flagged": "{{count}} flagged",
+      "noLateToday": "No late arrivals today",
+      "clockedInAt": "Clocked in {{time}}"
     },
     "shop": {
       "settingsTitle": "Shop settings",

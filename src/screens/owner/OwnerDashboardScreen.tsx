@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { estimateLaborCost } from '../../payroll/laborCost';
-import { computeWeeklyLaborCost } from '../../payroll/weeklyLaborCost';
+import { computeMonthlyLaborCost } from '../../payroll/monthlyLaborCost';
 import { computeAttendanceSummary } from '../../payroll/attendance';
+import { computeLateArrivals, LateArrival } from '../../payroll/lateArrivals';
 import { formatCurrency } from '../../lib/currency';
 import StatCard from '../../components/StatCard';
-import WeeklyBarChart from '../../components/WeeklyBarChart';
+import MonthlyBarChart from '../../components/MonthlyBarChart';
+import LateArrivalsCard from '../../components/LateArrivalsCard';
 import Avatar from '../../components/Avatar';
 import SectionLabel from '../../components/SectionLabel';
 import { usePendingApprovalsCount } from '../../hooks/usePendingApprovalsCount';
@@ -32,24 +35,29 @@ function startOfDay(offsetDays = 0): Date {
   return d;
 }
 
-function startOfWeek(): Date {
+function startOfMonth(): Date {
   const now = new Date();
-  const day = now.getDay();
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(now.getFullYear(), now.getMonth(), diff);
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function daysInMonth(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 }
 
 export default function OwnerDashboardScreen() {
   const { t, i18n } = useTranslation();
   const { profile } = useAuth();
+  const navigation = useNavigation<any>();
   const [shopName, setShopName] = useState('');
   const [isOpen, setIsOpen] = useState(true);
   const [shopId, setShopId] = useState<string | null>(null);
+  const [staffCount, setStaffCount] = useState(0);
   const [activeStaff, setActiveStaff] = useState<ActiveStaffRow[]>([]);
   const [laborCostToday, setLaborCostToday] = useState(0);
   const [shiftsLoggedToday, setShiftsLoggedToday] = useState(0);
-  const [budget, setBudget] = useState<number | null>(null);
-  const [weeklyCosts, setWeeklyCosts] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  const [dailyBudget, setDailyBudget] = useState<number | null>(null);
+  const [monthlyCosts, setMonthlyCosts] = useState<number[]>([]);
+  const [lateArrivals, setLateArrivals] = useState<LateArrival[]>([]);
   const [attendance, setAttendance] = useState({ present: 0, absent: 0, late: 0, onLeave: 0 });
   const pendingCount = usePendingApprovalsCount();
   const [now, setNow] = useState(new Date());
@@ -72,8 +80,15 @@ export default function OwnerDashboardScreen() {
       setShopName(shop.name);
       setIsOpen(shop.is_open);
       setShopId(shop.id);
-      setBudget(shop.daily_labor_budget ?? null);
+      setDailyBudget(shop.daily_labor_budget ?? null);
     }
+
+    const { count: staffTotal } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', profile.id)
+      .eq('role', 'employee');
+    setStaffCount(staffTotal ?? 0);
 
     const { data: activeData } = await supabase
       .from('shifts')
@@ -83,7 +98,7 @@ export default function OwnerDashboardScreen() {
 
     const { data: todayShifts } = await supabase
       .from('shifts')
-      .select('clock_in_at, clock_out_at, staff_id, profiles(hourly_rate, owner_id)')
+      .select('clock_in_at, clock_out_at, staff_id, profiles(full_name, job_title, hourly_rate, owner_id)')
       .gte('clock_in_at', startOfDay().toISOString())
       .eq('profiles.owner_id', profile.id);
 
@@ -145,23 +160,58 @@ export default function OwnerDashboardScreen() {
         nowMinutes
       );
       setLaborCostToday(cost);
+
+      const earliestClockInByStaff = new Map<
+        string,
+        { minutes: number; hourlyRate: number | null; staffName: string; jobTitle: string | null }
+      >();
+      for (const row of todayShifts as any[]) {
+        const minutes = Math.floor(new Date(row.clock_in_at).getTime() / 60000);
+        const existing = earliestClockInByStaff.get(row.staff_id);
+        if (!existing || minutes < existing.minutes) {
+          earliestClockInByStaff.set(row.staff_id, {
+            minutes,
+            hourlyRate: row.profiles?.hourly_rate ?? null,
+            staffName: row.profiles?.full_name ?? t('common.unknown'),
+            jobTitle: row.profiles?.job_title ?? null,
+          });
+        }
+      }
+      const lateInputs = (todaySchedule ?? []).flatMap((schedRow: any) => {
+        const clock = earliestClockInByStaff.get(schedRow.staff_id);
+        if (!clock) return [];
+        return [
+          {
+            staffId: schedRow.staff_id,
+            staffName: clock.staffName,
+            jobTitle: clock.jobTitle,
+            clockInMinutes: clock.minutes,
+            scheduledStartMinutes: Math.floor(new Date(schedRow.starts_at).getTime() / 60000),
+            hourlyRate: clock.hourlyRate,
+          },
+        ];
+      });
+      setLateArrivals(computeLateArrivals(lateInputs, 5));
     }
 
-    const { data: weekShifts } = await supabase
+    const monthStart = startOfMonth();
+    const elapsedDays = now.getDate();
+    const { data: monthShifts } = await supabase
       .from('shifts')
       .select('clock_in_at, clock_out_at, profiles(hourly_rate, owner_id)')
-      .gte('clock_in_at', startOfWeek().toISOString())
+      .gte('clock_in_at', monthStart.toISOString())
       .eq('profiles.owner_id', profile.id);
 
-    if (weekShifts) {
-      setWeeklyCosts(
-        computeWeeklyLaborCost(
-          weekShifts.map((row: any) => ({
+    if (monthShifts) {
+      setMonthlyCosts(
+        computeMonthlyLaborCost(
+          monthShifts.map((row: any) => ({
             hourlyRate: row.profiles?.hourly_rate ?? null,
             clockInMinutes: Math.floor(new Date(row.clock_in_at).getTime() / 60000),
             clockOutMinutes: row.clock_out_at ? Math.floor(new Date(row.clock_out_at).getTime() / 60000) : null,
           })),
-          startOfWeek(),
+          monthStart,
+          elapsedDays,
           nowMinutes
         )
       );
@@ -190,9 +240,12 @@ export default function OwnerDashboardScreen() {
   const hour = now.getHours();
   const greeting =
     hour < 12 ? t('owner.dashboard.goodMorning') : hour < 18 ? t('owner.dashboard.goodAfternoon') : t('owner.dashboard.goodEvening');
-  const budgetPercent = budget && budget > 0 ? Math.round((laborCostToday / budget) * 100) : null;
-  const dayLabels = i18n.language === 'vi' ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const todayIndex = (now.getDay() + 6) % 7;
+  const budgetPercent = dailyBudget && dailyBudget > 0 ? Math.round((laborCostToday / dailyBudget) * 100) : null;
+  const monthlyBudget = dailyBudget ? dailyBudget * daysInMonth(now) : null;
+  const monthToDateCost = monthlyCosts.reduce((a, b) => a + b, 0);
+  const monthlyBudgetPercent = monthlyBudget && monthlyBudget > 0 ? Math.round((monthToDateCost / monthlyBudget) * 100) : null;
+  const dateLine = now.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' });
+  const liveTime = now.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
 
   return (
     <FlatList
@@ -216,18 +269,49 @@ export default function OwnerDashboardScreen() {
                 <Text style={styles.openPillText}>{isOpen ? t('owner.dashboard.storeOpen') : t('owner.dashboard.storeClosed')}</Text>
                 <Switch value={isOpen} onValueChange={toggleOpen} trackColor={{ true: colors.brand }} />
               </View>
-              <Text style={styles.clock}>{now.toLocaleTimeString(undefined, { hour12: false })}</Text>
+            </View>
+          </View>
+
+          <View style={styles.statusBar}>
+            <Text style={styles.dateText}>{dateLine} · {shopName}</Text>
+            <View style={styles.livePill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.livePillText}>{t('owner.dashboard.live')} · {liveTime}</Text>
             </View>
           </View>
 
           <View style={styles.statGrid}>
             <View style={styles.statRow}>
-              <StatCard label={t('owner.dashboard.present')} value={attendance.present} caption={t('owner.dashboard.clockedIn')} dotColor={colors.statusPresent} />
-              <StatCard label={t('owner.dashboard.absent')} value={attendance.absent} caption={t('owner.dashboard.unplanned')} dotColor={colors.statusAbsent} />
+              <StatCard
+                label={t('owner.dashboard.present')}
+                value={attendance.present}
+                caption={t('owner.dashboard.ofStaff', { count: staffCount })}
+                dotColor={colors.statusPresent}
+                onPress={() => navigation.navigate('Roster')}
+              />
+              <StatCard
+                label={t('owner.dashboard.absent')}
+                value={attendance.absent}
+                caption={t('owner.dashboard.unplanned')}
+                dotColor={colors.statusAbsent}
+                onPress={() => navigation.navigate('Roster')}
+              />
             </View>
             <View style={styles.statRow}>
-              <StatCard label={t('owner.dashboard.late')} value={attendance.late} caption={t('owner.dashboard.pastGrace')} dotColor={colors.statusLate} />
-              <StatCard label={t('owner.dashboard.onLeave')} value={attendance.onLeave} caption={t('owner.dashboard.approved')} dotColor={colors.statusOnLeave} />
+              <StatCard
+                label={t('owner.dashboard.late')}
+                value={attendance.late}
+                caption={t('owner.dashboard.pastGrace')}
+                dotColor={colors.statusLate}
+                onPress={() => navigation.navigate('Roster')}
+              />
+              <StatCard
+                label={t('owner.dashboard.onLeave')}
+                value={attendance.onLeave}
+                caption={t('owner.dashboard.approved')}
+                dotColor={colors.statusOnLeave}
+                onPress={() => navigation.navigate('Approvals')}
+              />
             </View>
           </View>
 
@@ -241,24 +325,37 @@ export default function OwnerDashboardScreen() {
               ) : null}
             </View>
             <Text style={styles.heroValue}>{formatCurrency(laborCostToday)}</Text>
-            {budget ? (
+            {dailyBudget ? (
               <View style={styles.progressTrack}>
                 <View style={[styles.progressFill, { width: `${Math.min(100, budgetPercent ?? 0)}%` }]} />
               </View>
             ) : null}
             <View style={styles.heroFooterRow}>
               <Text style={styles.heroFooterText}>{t('owner.dashboard.shiftsLogged', { count: shiftsLoggedToday })}</Text>
-              {budget ? <Text style={styles.heroFooterText}>{t('owner.dashboard.budgetAmount', { amount: formatCurrency(budget) })}</Text> : null}
+              {dailyBudget ? <Text style={styles.heroFooterText}>{t('owner.dashboard.budgetAmount', { amount: formatCurrency(dailyBudget) })}</Text> : null}
             </View>
           </View>
 
-          <View style={styles.weeklyCard}>
-            <View style={styles.weeklyHeaderRow}>
-              <Text style={styles.weeklyTitle}>{t('owner.dashboard.laborCostWeek')}</Text>
-              <Text style={styles.weeklyTotal}>{formatCurrency(weeklyCosts.reduce((a, b) => a + b, 0))}</Text>
+          <View style={styles.monthlyCard}>
+            <View style={styles.monthlyHeaderRow}>
+              <Text style={styles.monthlyTitle}>{t('owner.dashboard.payrollBudgetAccrued')}</Text>
+              <Text style={styles.monthlySubtitle}>{t('owner.dashboard.monthToDate')}</Text>
             </View>
-            <WeeklyBarChart values={weeklyCosts} dayLabels={dayLabels} todayIndex={todayIndex} />
+            <Text style={styles.monthlyValue}>{formatCurrency(monthToDateCost)}</Text>
+            {monthlyBudget !== null ? (
+              <>
+                <Text style={styles.monthlyCaption}>
+                  {t('owner.dashboard.ofBudget', { amount: formatCurrency(monthlyBudget), percent: monthlyBudgetPercent ?? 0 })}
+                </Text>
+                <View style={styles.progressTrackLight}>
+                  <View style={[styles.progressFillLight, { width: `${Math.min(100, monthlyBudgetPercent ?? 0)}%` }]} />
+                </View>
+              </>
+            ) : null}
+            <MonthlyBarChart values={monthlyCosts} todayIndex={monthlyCosts.length - 1} />
           </View>
+
+          <LateArrivalsCard arrivals={lateArrivals} />
 
           {pendingCount > 0 ? (
             <View style={styles.approvalsBanner}>
@@ -302,7 +399,7 @@ export default function OwnerDashboardScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   listContent: { padding: spacing.lg, gap: spacing.sm },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.md },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   greeting: { fontSize: 13, color: colors.textSecondary },
   shopName: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
@@ -310,7 +407,11 @@ const styles = StyleSheet.create({
   openPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 4, paddingHorizontal: 10, ...shadow },
   openDot: { width: 7, height: 7, borderRadius: 4 },
   openPillText: { fontSize: 11, fontWeight: '700', color: colors.textSecondary },
-  clock: { fontFamily: 'monospace', fontSize: 12, color: colors.textMuted },
+  statusBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
+  dateText: { fontSize: 12, color: colors.textMuted, flex: 1, marginRight: spacing.sm },
+  livePill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.statusPresentBg, borderRadius: radii.pill, paddingVertical: 4, paddingHorizontal: 10 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.statusPresent },
+  livePillText: { fontSize: 11, fontWeight: '700', color: colors.statusPresent, fontFamily: 'monospace' },
   statGrid: { gap: spacing.md, marginBottom: spacing.md },
   statRow: { flexDirection: 'row', gap: spacing.md },
   heroCard: { backgroundColor: colors.brandDark, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.sm, marginBottom: spacing.md },
@@ -323,10 +424,14 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%', backgroundColor: '#9AD8B6', borderRadius: 3 },
   heroFooterRow: { flexDirection: 'row', justifyContent: 'space-between' },
   heroFooterText: { color: '#9FB8AA', fontSize: 12, fontFamily: 'monospace' },
-  weeklyCard: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.md, marginBottom: spacing.md, ...shadow },
-  weeklyHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  weeklyTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  weeklyTotal: { fontSize: 14, fontWeight: '700', color: colors.brand, fontFamily: 'monospace' },
+  monthlyCard: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.sm, marginBottom: spacing.md, ...shadow },
+  monthlyHeaderRow: { gap: 2 },
+  monthlyTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  monthlySubtitle: { fontSize: 12, color: colors.textMuted },
+  monthlyValue: { fontSize: 26, fontWeight: '800', color: colors.textPrimary, fontFamily: 'monospace' },
+  monthlyCaption: { fontSize: 12, color: colors.textMuted },
+  progressTrackLight: { height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },
+  progressFillLight: { height: '100%', backgroundColor: colors.brand, borderRadius: 3 },
   approvalsBanner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.approvalsBannerBg, borderRadius: radii.lg, padding: spacing.lg, marginBottom: spacing.md },
   approvalsBadge: { backgroundColor: colors.approvalsBannerAccent, borderRadius: radii.pill, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   approvalsBadgeText: { color: '#fff', fontWeight: '800' },
