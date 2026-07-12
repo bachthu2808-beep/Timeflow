@@ -72,6 +72,34 @@ export default function ClockScreen() {
 
     supabase
       .from('shifts')
+      .select('*')
+      .eq('staff_id', profile.id)
+      .eq('status', 'active')
+      .order('clock_in_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: { data: any }) => {
+        if (!data) return;
+        setActiveShift({
+          id: data.id,
+          staffId: data.staff_id,
+          shopId: data.shop_id,
+          clockInAt: data.clock_in_at,
+          clockOutAt: null,
+          paidLunch: data.paid_lunch,
+          isHoliday: data.is_holiday,
+          status: 'active',
+          mockedLocation: data.mocked_location,
+          clockInPhotoUrl: data.clock_in_photo_url,
+        });
+      });
+  }, [profile]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    supabase
+      .from('shifts')
       .select('clock_in_at')
       .eq('staff_id', profile.id)
       .order('clock_in_at', { ascending: false })
