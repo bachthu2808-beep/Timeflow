@@ -203,6 +203,8 @@
       "outOfRangeMessage": "You're not close enough to the shop to clock in.",
       "savedOfflineTitle": "Saved offline",
       "savedOfflineMessage": "You're clocked in. This will sync once you're back online.",
+      "shiftEndedTitle": "Shift ended",
+      "shiftEndedMessage": "See it in Payslip & History.",
       "streak": "🔥 {{count}}-day on-time streak",
       "pendingSync_one": "{{count}} action waiting to sync",
       "pendingSync_other": "{{count}} actions waiting to sync"

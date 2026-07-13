@@ -201,6 +201,8 @@
       "outOfRangeMessage": "Bạn chưa đủ gần quán để chấm công.",
       "savedOfflineTitle": "Đã lưu ngoại tuyến",
       "savedOfflineMessage": "Bạn đã chấm công. Dữ liệu sẽ đồng bộ khi có mạng trở lại.",
+      "shiftEndedTitle": "Ca làm đã kết thúc",
+      "shiftEndedMessage": "Xem trong Phiếu lương & Lịch sử.",
       "streak": "🔥 Chuỗi {{count}} ngày đúng giờ",
       "pendingSync": "{{count}} thao tác đang chờ đồng bộ"
     },
