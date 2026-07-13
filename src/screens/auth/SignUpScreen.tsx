@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { colors, radii, shadow, spacing } from '../../theme';
@@ -29,40 +29,34 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
 
     setSubmitting(true);
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+      const trimmedEmail = email.trim();
+
+      if (mode === 'employee') {
+        const { data: hasInvite, error: checkError } = await supabase.rpc('has_pending_invitation', {
+          p_email: trimmedEmail,
+        });
+        if (checkError || !hasInvite) {
+          setError(t('auth.signup.noInvitation'));
+          return;
+        }
+      }
+
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          data: mode === 'owner' ? { role: 'owner', full_name: fullName.trim() } : { role: 'employee' },
+        },
+      });
+
       if (signUpError || !data.user) {
         setError(signUpError?.message ?? t('auth.signup.signUpFailed'));
         return;
       }
 
-      if (mode === 'owner') {
-        const { error: rpcError } = await supabase.rpc('create_owner_profile', { p_full_name: fullName });
-        if (rpcError) {
-          setError(rpcError.message);
-          return;
-        }
-      } else {
-        const { data: invitation, error: findError } = await supabase
-          .from('staff_invitations')
-          .select('id')
-          .eq('email', email)
-          .is('consumed_at', null)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (findError || !invitation) {
-          setError(t('auth.signup.noInvitation'));
-          return;
-        }
-
-        const { error: rpcError } = await supabase.rpc('accept_staff_invitation', {
-          invitation_id: invitation.id,
-        });
-        if (rpcError) {
-          setError(rpcError.message);
-          return;
-        }
+      if (!data.session) {
+        Alert.alert(t('auth.signup.confirmEmailTitle'), t('auth.signup.confirmEmailMessage'));
+        onBackToLogin();
       }
     } finally {
       setSubmitting(false);

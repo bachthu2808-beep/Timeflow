@@ -205,47 +205,67 @@ create policy "staff_invitations: owner manages own invitations" on staff_invita
 create policy "staff_invitations: invitee reads their own pending invitation" on staff_invitations
   for select using (email = (auth.jwt() ->> 'email') and consumed_at is null);
 
--- Signup is DB-enforced via security-definer functions rather than a broad
--- "insert your own profile" RLS policy, so a client can't fabricate owner_id.
+-- Signup is DB-enforced via a security-definer trigger on auth.users rather
+-- than a broad "insert your own profile" RLS policy, so a client can't
+-- fabricate owner_id. The trigger (not an RPC called after signUp) is what
+-- makes this work when "Confirm email" is on: signUp() returns no session
+-- until the address is confirmed, so a client-side RPC call right after
+-- signUp runs unauthenticated and auth.uid() is null. The trigger fires
+-- inside Postgres the moment the auth.users row is inserted, independent of
+-- whether the client ever gets a session.
 
-create or replace function create_owner_profile(p_full_name text)
-returns void as $$
-begin
-  insert into profiles (id, owner_id, role, full_name, pay_basis)
-  values (auth.uid(), auth.uid(), 'owner', p_full_name, 'monthly');
-end;
-$$ language plpgsql security definer;
-
-grant execute on function create_owner_profile(text) to authenticated;
-
-create or replace function accept_staff_invitation(invitation_id uuid)
-returns void as $$
+create or replace function public.handle_new_user()
+returns trigger as $$
 declare
+  v_role text := new.raw_user_meta_data ->> 'role';
+  v_full_name text := new.raw_user_meta_data ->> 'full_name';
   inv staff_invitations%rowtype;
 begin
-  select * into inv from staff_invitations
-    where id = invitation_id
-      and email = (auth.jwt() ->> 'email')
-      and consumed_at is null;
+  if v_role = 'owner' then
+    insert into profiles (id, owner_id, role, full_name, pay_basis)
+    values (new.id, new.id, 'owner', coalesce(v_full_name, ''), 'monthly');
+  elsif v_role = 'employee' then
+    select * into inv from staff_invitations
+      where lower(email) = lower(new.email) and consumed_at is null
+      order by created_at desc
+      limit 1;
 
-  if not found then
-    raise exception 'Invitation not found or already used';
+    if found then
+      insert into profiles (
+        id, owner_id, role, full_name, job_title, pay_basis, hourly_rate, monthly_rate,
+        lunch_allowance_per_shift, default_shop_id
+      )
+      values (
+        new.id, inv.owner_id, 'employee', inv.full_name, inv.job_title, inv.pay_basis, inv.hourly_rate,
+        inv.monthly_rate, inv.lunch_allowance_per_shift, inv.default_shop_id
+      );
+
+      update staff_invitations set consumed_at = now() where id = inv.id;
+    end if;
   end if;
 
-  insert into profiles (
-    id, owner_id, role, full_name, job_title, pay_basis, hourly_rate, monthly_rate,
-    lunch_allowance_per_shift, default_shop_id
-  )
-  values (
-    auth.uid(), inv.owner_id, 'employee', inv.full_name, inv.job_title, inv.pay_basis, inv.hourly_rate,
-    inv.monthly_rate, inv.lunch_allowance_per_shift, inv.default_shop_id
-  );
-
-  update staff_invitations set consumed_at = now() where id = inv.id;
+  return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
-grant execute on function accept_staff_invitation(uuid) to authenticated;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Lets the sign-up screen tell an uninvited employee "no invitation found"
+-- before creating an auth account for them, without requiring a session
+-- (staff_invitations RLS otherwise requires auth.jwt() to already carry the
+-- invitee's email).
+create or replace function public.has_pending_invitation(p_email text)
+returns boolean as $$
+  select exists (
+    select 1 from staff_invitations
+    where lower(email) = lower(p_email) and consumed_at is null
+  );
+$$ language sql security definer set search_path = public stable;
+
+grant execute on function public.has_pending_invitation(text) to anon, authenticated;
 
 -- Row Level Security: owners see/manage their own shop's data, employees see
 -- only their own records (plus the shop they're assigned to, for geofencing).
