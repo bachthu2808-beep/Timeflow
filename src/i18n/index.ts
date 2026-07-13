@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Localization from 'expo-localization';
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
@@ -9,19 +8,15 @@ export const SUPPORTED_LANGUAGES = ['en', 'vi'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 const LANGUAGE_STORAGE_KEY = 'bt28staff.language';
-
-function detectDeviceLanguage(): SupportedLanguage {
-  const deviceTag = Localization.getLocales()[0]?.languageCode;
-  return deviceTag === 'vi' ? 'vi' : 'en';
-}
+const DEFAULT_LANGUAGE: SupportedLanguage = 'vi';
 
 i18next.use(initReactI18next).init({
   resources: {
     en: { translation: en },
     vi: { translation: vi },
   },
-  lng: detectDeviceLanguage(),
-  fallbackLng: 'en',
+  lng: DEFAULT_LANGUAGE,
+  fallbackLng: DEFAULT_LANGUAGE,
   interpolation: { escapeValue: false },
 });
 
