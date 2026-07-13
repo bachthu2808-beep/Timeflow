@@ -32,7 +32,9 @@
       "backToSignIn": "Đã có tài khoản? Đăng nhập",
       "validationError": "Nhập họ tên, email, và mật khẩu ít nhất 6 ký tự.",
       "signUpFailed": "Đăng ký thất bại.",
-      "noInvitation": "Không tìm thấy lời mời nào đang chờ cho email này. Hãy nhờ chủ quán mời bạn trước."
+      "noInvitation": "Không tìm thấy lời mời nào đang chờ cho email này. Hãy nhờ chủ quán mời bạn trước.",
+      "confirmEmailTitle": "Kiểm tra email của bạn",
+      "confirmEmailMessage": "Chúng tôi đã gửi một liên kết xác nhận. Xác nhận email rồi đăng nhập."
     }
   },
   "nav": {

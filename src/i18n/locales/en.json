@@ -32,7 +32,9 @@
       "backToSignIn": "Already have an account? Sign in",
       "validationError": "Enter your name, email, and a password of at least 6 characters.",
       "signUpFailed": "Sign up failed.",
-      "noInvitation": "No pending invitation found for this email. Ask your owner to invite you first."
+      "noInvitation": "No pending invitation found for this email. Ask your owner to invite you first.",
+      "confirmEmailTitle": "Check your email",
+      "confirmEmailMessage": "We sent you a confirmation link. Confirm your email, then sign in."
     }
   },
   "nav": {
