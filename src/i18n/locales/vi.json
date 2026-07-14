@@ -136,7 +136,10 @@
       "monthlyRatePlaceholder": "Lương theo tháng",
       "lunchAllowancePlaceholder": "Phụ cấp ăn trưa mỗi ca",
       "sending": "Đang gửi…",
-      "sendInvitation": "Gửi lời mời"
+      "sendInvitation": "Gửi lời mời",
+      "assignedShop": "Quán được gán",
+      "noShopsYet": "Thiết lập quán trước (tab Quán) rồi mới gán được nhân viên vào quán.",
+      "noShopAssignedWarning": "Chưa gán quán — người này chưa thể chấm công cho đến khi bạn chọn một quán."
     },
     "schedule": {
       "buildRota": "Xếp lịch làm",

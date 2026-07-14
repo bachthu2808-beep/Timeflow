@@ -137,7 +137,10 @@
       "monthlyRatePlaceholder": "Monthly rate",
       "lunchAllowancePlaceholder": "Lunch allowance per shift",
       "sending": "Sending…",
-      "sendInvitation": "Send invitation"
+      "sendInvitation": "Send invitation",
+      "assignedShop": "Assigned shop",
+      "noShopsYet": "Set up a shop first (Shop tab) before you can assign staff to one.",
+      "noShopAssignedWarning": "No shop assigned — this person can't clock in until you pick one."
     },
     "schedule": {
       "buildRota": "Build the rota",

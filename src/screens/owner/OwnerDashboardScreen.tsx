@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { estimateLaborCost } from '../../payroll/laborCost';
@@ -229,6 +229,14 @@ export default function OwnerDashboardScreen() {
       supabase.removeChannel(channel);
     };
   }, [profile]);
+
+  // Realtime alone misses updates when the socket drops (e.g. the tab was
+  // backgrounded on mobile web) — refetch on every focus as a backstop.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [profile])
+  );
 
   async function toggleOpen(next: boolean) {
     setIsOpen(next);

@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { notify } from '../../lib/notify';
-import { isWithinGeofence } from '../../lib/geofence';
 import { enqueue, flushQueue, getQueueLength } from '../../lib/offlineQueue';
 import { calculatePay } from '../../payroll/calculatePay';
 import { calculateOnTimeStreak } from '../../payroll/streaks';
@@ -143,16 +142,11 @@ export default function ClockScreen() {
     setBusy(true);
     try {
       const position = await Location.getCurrentPositionAsync({});
-      const withinRange = isWithinGeofence(
-        { latitude: position.coords.latitude, longitude: position.coords.longitude },
-        { latitude: shop.latitude, longitude: shop.longitude },
-        shop.geofenceRadiusMeters
-      );
 
-      if (!withinRange) {
-        notify(t('employee.clock.outOfRangeTitle'), t('employee.clock.outOfRangeMessage'));
-        return;
-      }
+      // Geofence enforcement is temporarily disabled while we're still
+      // assigning staff to shops and gathering real test data — clock-in is
+      // allowed from anywhere for now. Re-enable the isWithinGeofence check
+      // here once shop assignment + location testing is confirmed working.
 
       // Android exposes a best-effort "is this a mock location provider" signal.
       // Not built: iOS spoofing detection, and blocking clock-in on a positive

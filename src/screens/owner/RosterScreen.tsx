@@ -8,13 +8,14 @@ import { formatCurrency } from '../../lib/currency';
 import Avatar from '../../components/Avatar';
 import SectionLabel from '../../components/SectionLabel';
 import { colors, radii, shadow, spacing } from '../../theme';
-import type { PayBasis, Profile, StaffInvitation } from '../../types';
+import type { PayBasis, Profile, Shop, StaffInvitation } from '../../types';
 
 export default function RosterScreen() {
   const { t } = useTranslation();
   const { profile } = useAuth();
   const [staff, setStaff] = useState<Profile[]>([]);
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
   const [query, setQuery] = useState('');
   const [inviteFormOpen, setInviteFormOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
@@ -25,10 +26,27 @@ export default function RosterScreen() {
   const [payBasis, setPayBasis] = useState<PayBasis>('hourly');
   const [rate, setRate] = useState('');
   const [lunchAllowance, setLunchAllowance] = useState('0');
+  const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function load() {
     if (!profile) return;
+
+    const { data: shopData } = await supabase.from('shops').select('*').eq('owner_id', profile.id);
+    if (shopData) {
+      setShops(
+        shopData.map((row: any) => ({
+          id: row.id,
+          ownerId: row.owner_id,
+          name: row.name,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          geofenceRadiusMeters: row.geofence_radius_meters,
+          dailyLaborBudget: row.daily_labor_budget,
+          isOpen: row.is_open,
+        }))
+      );
+    }
 
     const { data: staffData } = await supabase
       .from('profiles')
@@ -110,6 +128,7 @@ export default function RosterScreen() {
     setJobTitle(person.jobTitle ?? '');
     setPayBasis(person.payBasis);
     setRate(String(person.payBasis === 'hourly' ? person.hourlyRate ?? '' : person.monthlyRate ?? ''));
+    setSelectedShopId(person.defaultShopId ?? null);
   }
 
   async function sendInvite() {
@@ -164,6 +183,7 @@ export default function RosterScreen() {
           pay_basis: payBasis,
           hourly_rate: payBasis === 'hourly' ? parseFloat(rate) || 0 : null,
           monthly_rate: payBasis === 'monthly' ? parseFloat(rate) || 0 : null,
+          default_shop_id: selectedShopId,
         })
         .eq('id', editing.id);
 
@@ -286,6 +306,23 @@ export default function RosterScreen() {
             value={rate}
             onChangeText={setRate}
           />
+          <Text style={styles.label}>{t('owner.roster.assignedShop')}</Text>
+          {shops.length === 0 ? (
+            <Text style={styles.meta}>{t('owner.roster.noShopsYet')}</Text>
+          ) : (
+            <View style={styles.chipRow}>
+              {shops.map((s) => (
+                <Pressable
+                  key={s.id}
+                  onPress={() => setSelectedShopId(s.id)}
+                  style={[styles.chip, selectedShopId === s.id && styles.chipSelected]}
+                >
+                  <Text style={selectedShopId === s.id ? styles.chipTextSelected : styles.chipText}>{s.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          {!selectedShopId ? <Text style={styles.warning}>{t('owner.roster.noShopAssignedWarning')}</Text> : null}
           <Pressable style={styles.saveButton} onPress={savePayEdit} disabled={submitting}>
             <Text style={styles.saveButtonText}>{submitting ? t('common.saving') : t('common.save')}</Text>
           </Pressable>
@@ -337,6 +374,8 @@ const styles = StyleSheet.create({
   tapToEdit: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
   formContainer: { padding: spacing.xl, gap: spacing.md },
   formTitle: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
+  label: { color: colors.textMuted, fontSize: 12 },
+  warning: { color: colors.danger, fontSize: 12 },
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, padding: spacing.md, fontSize: 16, color: colors.textPrimary },
   chipRow: { flexDirection: 'row', gap: spacing.sm },
   chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 14 },
