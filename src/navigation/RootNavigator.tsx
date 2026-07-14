@@ -9,7 +9,7 @@ import OwnerTabs from './OwnerTabs';
 import EmployeeTabs from './EmployeeTabs';
 
 export default function RootNavigator() {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, profileLoading } = useAuth();
   const [showSignUp, setShowSignUp] = useState(false);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function RootNavigator() {
     }
   }, [profile?.id]);
 
-  if (loading) {
+  if (loading || (session && profileLoading)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator />

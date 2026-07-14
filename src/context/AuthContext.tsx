@@ -7,6 +7,7 @@ interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  profileLoading: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -56,13 +58,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!session?.user?.id) {
       setProfile(null);
+      setProfileLoading(false);
       return;
     }
 
     let cancelled = false;
+    setProfileLoading(true);
     fetchProfile(session.user.id).then((result) => {
       if (!cancelled) {
         setProfile(result);
+        setProfileLoading(false);
       }
     });
 
@@ -76,11 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       profile,
       loading,
+      profileLoading,
       signOut: async () => {
         await supabase.auth.signOut();
       },
     }),
-    [session, profile, loading]
+    [session, profile, loading, profileLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
