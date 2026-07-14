@@ -6,7 +6,7 @@ import PayslipScreen from '../screens/employee/PayslipScreen';
 import HistoryScreen from '../screens/employee/HistoryScreen';
 import ScheduleScreen from '../screens/employee/ScheduleScreen';
 import ChatScreen from '../screens/employee/ChatScreen';
-import LanguageToggle from '../components/LanguageToggle';
+import HeaderActions from '../components/HeaderActions';
 
 const Tab = createBottomTabNavigator();
 
@@ -14,7 +14,7 @@ export default function EmployeeTabs() {
   const { t } = useTranslation();
 
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true, headerRight: () => <LanguageToggle /> }}>
+    <Tab.Navigator screenOptions={{ headerShown: true, headerRight: () => <HeaderActions /> }}>
       <Tab.Screen name="Clock" component={ClockScreen} options={{ title: t('nav.employee.clock') }} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ title: t('nav.employee.schedule') }} />
       <Tab.Screen name="Payslip" component={PayslipScreen} options={{ title: t('nav.employee.payslip') }} />

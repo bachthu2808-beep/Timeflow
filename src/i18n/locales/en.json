@@ -13,7 +13,10 @@
     "monthly": "Monthly",
     "missingInfoTitle": "Missing info",
     "failedTitle": "Failed",
-    "failedToSaveTitle": "Failed to save"
+    "failedToSaveTitle": "Failed to save",
+    "signOut": "Sign out",
+    "signOutTitle": "Sign out?",
+    "signOutMessage": "You'll need to sign in again to get back into your account."
   },
   "auth": {
     "emailPlaceholder": "Email",
