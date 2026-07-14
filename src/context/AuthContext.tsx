@@ -65,26 +65,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const userId = session.user.id;
     let cancelled = false;
+
+    async function handleDeactivation() {
+      // Keep profileLoading true (and profile null) until signOut() flips the
+      // session to null too, so RootNavigator's spinner covers this whole
+      // transition instead of briefly rendering the wrong tab set.
+      setProfile(null);
+      try {
+        await supabase.auth.signOut();
+        notify(i18n.t('auth.accountRemovedTitle'), i18n.t('auth.accountRemovedMessage'));
+      } catch {
+        // Couldn't reach Supabase (offline) — leave profileLoading true so the
+        // spinner keeps showing instead of rendering a tab set with a null
+        // profile. The next reconnect (or app reopen) gets another chance.
+      }
+    }
+
     setProfileLoading(true);
-    fetchProfile(session.user.id).then((result) => {
+    fetchProfile(userId).then((result) => {
       if (cancelled) return;
       if (result?.deactivatedAt) {
-        // Keep profileLoading true (and profile null) until signOut() flips the
-        // session to null too, so RootNavigator's spinner covers this whole
-        // transition instead of briefly rendering the wrong tab set.
-        setProfile(null);
-        supabase.auth.signOut().then(() => {
-          notify(i18n.t('auth.accountRemovedTitle'), i18n.t('auth.accountRemovedMessage'));
-        });
+        handleDeactivation();
         return;
       }
       setProfile(result);
       setProfileLoading(false);
     });
 
+    // The one-time fetch above only catches deactivation that already
+    // happened before this session loaded. Without this, an app instance
+    // that's already open when the owner removes the employee would never
+    // notice — token refreshes don't change session.user.id, so the effect
+    // wouldn't re-run. This subscription catches it live, mid-session.
+    const channel = supabase
+      .channel(`profile-deactivation-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+        (payload) => {
+          if (cancelled) return;
+          if ((payload.new as { deactivated_at: string | null }).deactivated_at) {
+            handleDeactivation();
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      supabase.removeChannel(channel);
     };
   }, [session?.user?.id]);
 

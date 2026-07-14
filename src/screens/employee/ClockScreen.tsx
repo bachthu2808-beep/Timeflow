@@ -178,31 +178,41 @@ export default function ClockScreen() {
         .single();
 
       if (error) {
-        // Likely offline — queue it and sync once connectivity returns.
-        await enqueue({
-          type: 'clock_in',
-          localId: `local-${Date.now()}`,
-          staffId: profile.id,
-          shopId: shop.id,
-          paidLunch: false,
-          isHoliday: false,
-          mockedLocation,
-          capturedAt,
-        });
-        setPendingCount(await getQueueLength());
-        setActiveShift({
-          id: `pending-${Date.now()}`,
-          staffId: profile.id,
-          shopId: shop.id,
-          clockInAt: capturedAt,
-          clockOutAt: null,
-          paidLunch: false,
-          isHoliday: false,
-          status: 'active',
-          mockedLocation,
-          clockInPhotoUrl: null,
-        });
-        notify(t('employee.clock.savedOfflineTitle'), t('employee.clock.savedOfflineMessage'));
+        // Only treat this as "offline, queue it" if we're actually offline.
+        // Otherwise the write failed for a real reason (e.g. an RLS denial
+        // for a removed account) that will never succeed on retry, and
+        // queuing it would jam the offline queue forever with no way for
+        // the user to know why.
+        const netState = await NetInfo.fetch();
+        if (!netState.isConnected) {
+          await enqueue({
+            type: 'clock_in',
+            localId: `local-${Date.now()}`,
+            staffId: profile.id,
+            shopId: shop.id,
+            paidLunch: false,
+            isHoliday: false,
+            mockedLocation,
+            capturedAt,
+          });
+          setPendingCount(await getQueueLength());
+          setActiveShift({
+            id: `pending-${Date.now()}`,
+            staffId: profile.id,
+            shopId: shop.id,
+            clockInAt: capturedAt,
+            clockOutAt: null,
+            paidLunch: false,
+            isHoliday: false,
+            status: 'active',
+            mockedLocation,
+            clockInPhotoUrl: null,
+          });
+          notify(t('employee.clock.savedOfflineTitle'), t('employee.clock.savedOfflineMessage'));
+          return;
+        }
+
+        notify(t('common.failedTitle'), error.message);
         return;
       }
 
@@ -237,14 +247,24 @@ export default function ClockScreen() {
             .eq('id', activeShift.id);
 
       if (error) {
-        await enqueue({
-          type: 'clock_out',
-          localId: `local-${Date.now()}`,
-          pairedClockInLocalId: isPending ? activeShift.id.replace('pending-', 'local-') : null,
-          shiftId: isPending ? null : activeShift.id,
-          capturedAt,
-        });
-        setPendingCount(await getQueueLength());
+        // A still-pending (never-synced) clock-in always queues its clock-out
+        // too — there's no server row to write to yet regardless of network
+        // state. Otherwise, only queue if we're actually offline; a real
+        // failure against an already-synced shift won't succeed on retry.
+        const netState = isPending ? null : await NetInfo.fetch();
+        if (isPending || !netState!.isConnected) {
+          await enqueue({
+            type: 'clock_out',
+            localId: `local-${Date.now()}`,
+            pairedClockInLocalId: isPending ? activeShift.id.replace('pending-', 'local-') : null,
+            shiftId: isPending ? null : activeShift.id,
+            capturedAt,
+          });
+          setPendingCount(await getQueueLength());
+        } else {
+          notify(t('common.failedTitle'), error.message);
+          return;
+        }
       }
 
       setActiveShift(null);

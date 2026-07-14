@@ -1,4 +1,4 @@
-import { formatCurrency } from './currency';
+import { formatCurrency, parseCurrencyInput } from './currency';
 
 describe('formatCurrency', () => {
   it('formats with dot thousand separators and a đ suffix', () => {
@@ -19,5 +19,33 @@ describe('formatCurrency', () => {
 
   it('formats negative amounts', () => {
     expect(formatCurrency(-1500)).toBe('-1.500 đ');
+  });
+});
+
+describe('parseCurrencyInput', () => {
+  it('treats dots as thousand separators, not decimal points', () => {
+    expect(parseCurrencyInput('50.000')).toBe(50000);
+  });
+
+  it('parses a plain digit string with no separators', () => {
+    expect(parseCurrencyInput('50000')).toBe(50000);
+  });
+
+  it('strips commas too', () => {
+    expect(parseCurrencyInput('50,000')).toBe(50000);
+  });
+
+  it('returns 0 for a literal zero', () => {
+    expect(parseCurrencyInput('0')).toBe(0);
+  });
+
+  it('returns null for empty input', () => {
+    expect(parseCurrencyInput('')).toBeNull();
+    expect(parseCurrencyInput('   ')).toBeNull();
+  });
+
+  it('returns null for non-numeric input', () => {
+    expect(parseCurrencyInput('abc')).toBeNull();
+    expect(parseCurrencyInput('50k')).toBeNull();
   });
 });

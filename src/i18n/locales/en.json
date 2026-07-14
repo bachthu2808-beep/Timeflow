@@ -131,6 +131,7 @@
       "noStaffYet": "No staff added yet.",
       "pendingInvitations": "Pending invitations",
       "missingInfoMessage": "Fill in name, email, and pay rate.",
+      "invalidRateMessage": "Enter a valid pay rate greater than 0.",
       "failedToInviteTitle": "Failed to invite",
       "invitedTitle": "Invited",
       "invitedMessage": "{{fullName}} can now sign up in the app with {{email}} to join your roster.",

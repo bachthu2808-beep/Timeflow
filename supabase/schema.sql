@@ -159,7 +159,7 @@ begin
   from profiles p where p.id = new.staff_id;
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger shifts_audit
   after insert or update on shifts
@@ -179,7 +179,7 @@ begin
   );
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger approval_requests_audit
   after insert or update on approval_requests
@@ -296,14 +296,28 @@ create policy "shops: staff read assigned owner's shops" on shops
     owner_id in (select owner_id from profiles where id = auth.uid())
   );
 
--- `drop policy if exists` makes this redefinition safe to re-run against an
--- existing database that already has the original (pre-deactivation) policy.
+-- `drop policy if exists` makes these redefinitions safe to re-run against an
+-- existing database that already has the original (pre-hardening) policies.
+--
+-- The deactivated_at check previously only lived in `with check`, which
+-- Postgres never evaluates for DELETE — a removed employee could still
+-- delete their own shift history. It's now in `using` too, so a deactivated
+-- staff_id loses SELECT/UPDATE/DELETE on their own rows, not just INSERT.
+-- `shop_id` is now also constrained to a shop under the employee's own
+-- owner, closing an unrestricted-shop_id gap that let a client target any
+-- shop in the database.
 drop policy if exists "shifts: staff manage own shifts" on shifts;
 create policy "shifts: staff manage own shifts" on shifts
-  for all using (staff_id = auth.uid())
+  for all using (
+    staff_id = auth.uid()
+    and staff_id in (select id from profiles where deactivated_at is null)
+  )
   with check (
     staff_id = auth.uid()
     and staff_id in (select id from profiles where deactivated_at is null)
+    and shop_id in (
+      select id from shops where owner_id = (select owner_id from profiles where id = auth.uid())
+    )
   );
 
 create policy "shifts: owner reads staff shifts" on shifts
@@ -311,8 +325,19 @@ create policy "shifts: owner reads staff shifts" on shifts
     staff_id in (select id from profiles where owner_id = auth.uid())
   );
 
+-- Same two fixes as `shifts` above: deactivated staff lose all access (not
+-- just insert), and `owner_id` must actually be the requester's real owner.
+drop policy if exists "approval_requests: staff manage own requests" on approval_requests;
 create policy "approval_requests: staff manage own requests" on approval_requests
-  for all using (staff_id = auth.uid()) with check (staff_id = auth.uid());
+  for all using (
+    staff_id = auth.uid()
+    and staff_id in (select id from profiles where deactivated_at is null)
+  )
+  with check (
+    staff_id = auth.uid()
+    and staff_id in (select id from profiles where deactivated_at is null)
+    and owner_id in (select owner_id from profiles where id = auth.uid())
+  );
 
 create policy "approval_requests: owner reads and responds" on approval_requests
   for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
@@ -334,8 +359,18 @@ create policy "shift_schedule: staff read their own scheduled shifts" on shift_s
 create policy "swap_requests: owner manages own" on swap_requests
   for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 
+-- Deactivated requester loses access, and owner_id must be their real owner.
+drop policy if exists "swap_requests: requester manages own request" on swap_requests;
 create policy "swap_requests: requester manages own request" on swap_requests
-  for all using (requesting_staff_id = auth.uid()) with check (requesting_staff_id = auth.uid());
+  for all using (
+    requesting_staff_id = auth.uid()
+    and requesting_staff_id in (select id from profiles where deactivated_at is null)
+  )
+  with check (
+    requesting_staff_id = auth.uid()
+    and requesting_staff_id in (select id from profiles where deactivated_at is null)
+    and owner_id in (select owner_id from profiles where id = auth.uid())
+  );
 
 create policy "swap_requests: staff read open or targeted requests" on swap_requests
   for select using (
@@ -343,16 +378,45 @@ create policy "swap_requests: staff read open or targeted requests" on swap_requ
     or (target_staff_id is null and owner_id in (select owner_id from profiles where id = auth.uid()))
   );
 
+-- This had no explicit `with check`, so Postgres defaulted it to the same
+-- `using` expression evaluated against the *new* row — which still required
+-- `status = 'open'`, so the accept action (which sets status to 'accepted')
+-- always matched zero rows and silently no-opped. The explicit `with check`
+-- below matches the row the accept action is actually trying to write.
+drop policy if exists "swap_requests: staff accept an open or targeted request" on swap_requests;
 create policy "swap_requests: staff accept an open or targeted request" on swap_requests
   for update using (
     status = 'open'
     and (target_staff_id = auth.uid() or target_staff_id is null)
     and owner_id in (select owner_id from profiles where id = auth.uid())
+  )
+  with check (
+    status = 'accepted'
+    and accepted_by_staff_id = auth.uid()
+    and accepted_by_staff_id in (select id from profiles where deactivated_at is null)
+    and (target_staff_id = auth.uid() or target_staff_id is null)
+    and owner_id in (select owner_id from profiles where id = auth.uid())
   );
 
+-- Previously only checked "sender is a participant," so an owner could plant
+-- a message under any staff_id (not just their own staff), and a staff
+-- member could plant one under any owner_id (not just their real employer).
+-- Now each direction is scoped to a real owner<->staff relationship, and a
+-- deactivated staff member loses send access entirely.
+drop policy if exists "messages: participants read and send" on messages;
 create policy "messages: participants read and send" on messages
   for all using (owner_id = auth.uid() or staff_id = auth.uid())
-  with check (sender_id = auth.uid() and (owner_id = auth.uid() or staff_id = auth.uid()));
+  with check (
+    sender_id = auth.uid()
+    and (
+      (owner_id = auth.uid() and staff_id in (select id from profiles where owner_id = auth.uid()))
+      or (
+        staff_id = auth.uid()
+        and staff_id in (select id from profiles where deactivated_at is null)
+        and owner_id in (select owner_id from profiles where id = auth.uid())
+      )
+    )
+  );
 
 create policy "audit_log: owner reads own log" on audit_log
   for select using (owner_id = auth.uid());
@@ -379,3 +443,7 @@ alter publication supabase_realtime add table approval_requests;
 alter publication supabase_realtime add table shift_schedule;
 alter publication supabase_realtime add table swap_requests;
 alter publication supabase_realtime add table messages;
+-- Lets a signed-in client notice its own profile being deactivated
+-- mid-session (AuthContext subscribes to its own row) instead of only
+-- catching it the next time the app cold-starts and re-fetches the profile.
+alter publication supabase_realtime add table profiles;

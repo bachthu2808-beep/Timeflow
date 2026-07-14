@@ -130,6 +130,7 @@
       "noStaffYet": "Chưa có nhân viên nào.",
       "pendingInvitations": "Lời mời đang chờ",
       "missingInfoMessage": "Điền tên, email và mức lương.",
+      "invalidRateMessage": "Nhập mức lương hợp lệ, lớn hơn 0.",
       "failedToInviteTitle": "Mời thất bại",
       "invitedTitle": "Đã mời",
       "invitedMessage": "{{fullName}} giờ có thể đăng ký trong ứng dụng với email {{email}} để tham gia nhóm của bạn.",

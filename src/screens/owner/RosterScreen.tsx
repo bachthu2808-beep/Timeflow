@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { notify } from '../../lib/notify';
 import { confirm } from '../../lib/confirm';
-import { formatCurrency } from '../../lib/currency';
+import { formatCurrency, parseCurrencyInput } from '../../lib/currency';
 import Avatar from '../../components/Avatar';
 import SectionLabel from '../../components/SectionLabel';
 import { colors, radii, shadow, spacing } from '../../theme';
@@ -121,6 +121,7 @@ export default function RosterScreen() {
     setPayBasis('hourly');
     setRate('');
     setLunchAllowance('0');
+    setSelectedShopId(shops[0]?.id ?? null);
   }
 
   function openInviteForm() {
@@ -143,25 +144,24 @@ export default function RosterScreen() {
       return;
     }
 
+    const parsedRate = parseCurrencyInput(rate);
+    if (parsedRate === null || parsedRate <= 0) {
+      notify(t('common.missingInfoTitle'), t('owner.roster.invalidRateMessage'));
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const { data: defaultShop } = await supabase
-        .from('shops')
-        .select('id')
-        .eq('owner_id', profile.id)
-        .limit(1)
-        .maybeSingle();
-
       const { error } = await supabase.from('staff_invitations').insert({
         owner_id: profile.id,
         email: email.trim().toLowerCase(),
         full_name: fullName.trim(),
         job_title: jobTitle.trim() || null,
         pay_basis: payBasis,
-        hourly_rate: payBasis === 'hourly' ? parseFloat(rate) : null,
-        monthly_rate: payBasis === 'monthly' ? parseFloat(rate) : null,
-        lunch_allowance_per_shift: parseFloat(lunchAllowance) || 0,
-        default_shop_id: defaultShop?.id ?? null,
+        hourly_rate: payBasis === 'hourly' ? parsedRate : null,
+        monthly_rate: payBasis === 'monthly' ? parsedRate : null,
+        lunch_allowance_per_shift: parseCurrencyInput(lunchAllowance) ?? 0,
+        default_shop_id: selectedShopId,
       });
 
       if (error) {
@@ -179,6 +179,13 @@ export default function RosterScreen() {
 
   async function savePayEdit() {
     if (!editing) return;
+
+    const parsedRate = parseCurrencyInput(rate);
+    if (parsedRate === null || parsedRate <= 0) {
+      notify(t('common.missingInfoTitle'), t('owner.roster.invalidRateMessage'));
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { error } = await supabase
@@ -186,8 +193,8 @@ export default function RosterScreen() {
         .update({
           job_title: jobTitle.trim() || null,
           pay_basis: payBasis,
-          hourly_rate: payBasis === 'hourly' ? parseFloat(rate) || 0 : null,
-          monthly_rate: payBasis === 'monthly' ? parseFloat(rate) || 0 : null,
+          hourly_rate: payBasis === 'hourly' ? parsedRate : null,
+          monthly_rate: payBasis === 'monthly' ? parsedRate : null,
           default_shop_id: selectedShopId,
         })
         .eq('id', editing.id);
@@ -341,6 +348,7 @@ export default function RosterScreen() {
             value={lunchAllowance}
             onChangeText={setLunchAllowance}
           />
+          <ShopPicker shops={shops} selectedShopId={selectedShopId} onSelect={setSelectedShopId} t={t} />
           <Pressable style={styles.saveButton} onPress={sendInvite} disabled={submitting}>
             <Text style={styles.saveButtonText}>{submitting ? t('owner.roster.sending') : t('owner.roster.sendInvitation')}</Text>
           </Pressable>
@@ -362,23 +370,7 @@ export default function RosterScreen() {
             value={rate}
             onChangeText={setRate}
           />
-          <Text style={styles.label}>{t('owner.roster.assignedShop')}</Text>
-          {shops.length === 0 ? (
-            <Text style={styles.meta}>{t('owner.roster.noShopsYet')}</Text>
-          ) : (
-            <View style={styles.chipRow}>
-              {shops.map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={() => setSelectedShopId(s.id)}
-                  style={[styles.chip, selectedShopId === s.id && styles.chipSelected]}
-                >
-                  <Text style={selectedShopId === s.id ? styles.chipTextSelected : styles.chipText}>{s.name}</Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
-          {!selectedShopId ? <Text style={styles.warning}>{t('owner.roster.noShopAssignedWarning')}</Text> : null}
+          <ShopPicker shops={shops} selectedShopId={selectedShopId} onSelect={setSelectedShopId} t={t} />
           <Pressable style={styles.saveButton} onPress={savePayEdit} disabled={submitting}>
             <Text style={styles.saveButtonText}>{submitting ? t('common.saving') : t('common.save')}</Text>
           </Pressable>
@@ -412,6 +404,40 @@ function PayBasisChips({
         <Text style={payBasis === 'monthly' ? styles.chipTextSelected : styles.chipText}>{t('common.monthly')}</Text>
       </Pressable>
     </View>
+  );
+}
+
+function ShopPicker({
+  shops,
+  selectedShopId,
+  onSelect,
+  t,
+}: {
+  shops: Shop[];
+  selectedShopId: string | null;
+  onSelect: (id: string) => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <>
+      <Text style={styles.label}>{t('owner.roster.assignedShop')}</Text>
+      {shops.length === 0 ? (
+        <Text style={styles.meta}>{t('owner.roster.noShopsYet')}</Text>
+      ) : (
+        <View style={styles.chipRow}>
+          {shops.map((s) => (
+            <Pressable
+              key={s.id}
+              onPress={() => onSelect(s.id)}
+              style={[styles.chip, selectedShopId === s.id && styles.chipSelected]}
+            >
+              <Text style={selectedShopId === s.id ? styles.chipTextSelected : styles.chipText}>{s.name}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+      {!selectedShopId ? <Text style={styles.warning}>{t('owner.roster.noShopAssignedWarning')}</Text> : null}
+    </>
   );
 }
 
