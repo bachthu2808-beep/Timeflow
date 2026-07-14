@@ -10,6 +10,7 @@ import ScheduleScreen from '../screens/owner/ScheduleScreen';
 import AuditLogScreen from '../screens/owner/AuditLogScreen';
 import OwnerChatStack from './OwnerChatStack';
 import LanguageToggle from '../components/LanguageToggle';
+import ScrollableTabBar from '../components/ScrollableTabBar';
 import { usePendingApprovalsCount } from '../hooks/usePendingApprovalsCount';
 import { colors } from '../theme';
 
@@ -20,7 +21,10 @@ export default function OwnerTabs() {
   const pendingApprovals = usePendingApprovalsCount();
 
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true, headerRight: () => <LanguageToggle /> }}>
+    <Tab.Navigator
+      tabBar={(props) => <ScrollableTabBar {...props} />}
+      screenOptions={{ headerShown: true, headerRight: () => <LanguageToggle /> }}
+    >
       <Tab.Screen name="Dashboard" component={OwnerDashboardScreen} options={{ title: t('nav.owner.dashboard') }} />
       <Tab.Screen name="Shop" component={ShopScreen} options={{ title: t('nav.owner.shop') }} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ title: t('nav.owner.schedule') }} />
