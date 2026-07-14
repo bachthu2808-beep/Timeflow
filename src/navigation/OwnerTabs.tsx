@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import OwnerDashboardScreen from '../screens/owner/OwnerDashboardScreen';
@@ -20,7 +21,18 @@ export default function OwnerTabs() {
   const pendingApprovals = usePendingApprovalsCount();
 
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true, headerRight: () => <LanguageToggle /> }}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: true,
+        headerRight: () => <LanguageToggle />,
+        tabBarItemStyle: { paddingHorizontal: 1 },
+        tabBarLabel: ({ color, children }) => (
+          <Text numberOfLines={2} style={{ fontSize: 9, lineHeight: 11, color, textAlign: 'center' }}>
+            {children}
+          </Text>
+        ),
+      }}
+    >
       <Tab.Screen name="Dashboard" component={OwnerDashboardScreen} options={{ title: t('nav.owner.dashboard') }} />
       <Tab.Screen name="Shop" component={ShopScreen} options={{ title: t('nav.owner.shop') }} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ title: t('nav.owner.schedule') }} />
