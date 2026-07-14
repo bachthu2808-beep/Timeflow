@@ -1,17 +1,18 @@
 import React from 'react';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { confirm } from '../lib/confirm';
 
 export default function SignOutButton() {
   const { t } = useTranslation();
   const { signOut } = useAuth();
 
-  function confirmSignOut() {
-    Alert.alert(t('common.signOutTitle'), t('common.signOutMessage'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.signOut'), style: 'destructive', onPress: () => signOut() },
-    ]);
+  async function confirmSignOut() {
+    const ok = await confirm(t('common.signOutTitle'), t('common.signOutMessage'), t('common.cancel'), t('common.signOut'));
+    if (ok) {
+      signOut();
+    }
   }
 
   return (
