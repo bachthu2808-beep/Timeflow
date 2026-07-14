@@ -23,7 +23,23 @@
     "passwordPlaceholder": "Mật khẩu",
     "login": {
       "signIn": "Đăng nhập",
-      "signUpLink": "Chưa có tài khoản? Tạo tài khoản"
+      "signUpLink": "Chưa có tài khoản? Tạo tài khoản",
+      "forgotPasswordLink": "Quên mật khẩu?",
+      "forgotPasswordEmailRequired": "Nhập email của bạn ở trên trước, rồi nhấn \"Quên mật khẩu?\".",
+      "sendingReset": "Đang gửi…",
+      "resetEmailSentTitle": "Kiểm tra email của bạn",
+      "resetEmailSentMessage": "Nếu email đó có tài khoản, chúng tôi đã gửi một liên kết để đặt lại mật khẩu."
+    },
+    "resetPassword": {
+      "title": "Đặt mật khẩu mới",
+      "subtitle": "Chọn mật khẩu mới cho tài khoản của bạn.",
+      "newPasswordPlaceholder": "Mật khẩu mới",
+      "confirmPasswordPlaceholder": "Xác nhận mật khẩu mới",
+      "submit": "Lưu mật khẩu mới",
+      "tooShortError": "Mật khẩu phải có ít nhất 6 ký tự.",
+      "mismatchError": "Mật khẩu không khớp.",
+      "successTitle": "Đã cập nhật mật khẩu",
+      "successMessage": "Mật khẩu của bạn đã được thay đổi."
     },
     "signup": {
       "title": "Tạo tài khoản của bạn",

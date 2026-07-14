@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import LanguageToggle from '../../components/LanguageToggle';
 import { colors, radii, shadow, spacing } from '../../theme';
 
@@ -15,6 +16,7 @@ export default function LoginScreen({ onSignUp }: Props) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
 
   async function handleSignIn() {
     setError(null);
@@ -23,6 +25,27 @@ export default function LoginScreen({ onSignUp }: Props) {
     setSubmitting(false);
     if (signInError) {
       setError(signInError.message);
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      setError(t('auth.login.forgotPasswordEmailRequired'));
+      return;
+    }
+
+    setError(null);
+    setSendingReset(true);
+    try {
+      const redirectTo = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : undefined;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (resetError) {
+        setError(resetError.message);
+        return;
+      }
+      notify(t('auth.login.resetEmailSentTitle'), t('auth.login.resetEmailSentMessage'));
+    } finally {
+      setSendingReset(false);
     }
   }
 
@@ -50,6 +73,9 @@ export default function LoginScreen({ onSignUp }: Props) {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Pressable style={styles.button} onPress={handleSignIn} disabled={submitting}>
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.login.signIn')}</Text>}
+      </Pressable>
+      <Pressable onPress={handleForgotPassword} disabled={sendingReset}>
+        <Text style={styles.link}>{sendingReset ? t('auth.login.sendingReset') : t('auth.login.forgotPasswordLink')}</Text>
       </Pressable>
       <Pressable onPress={onSignUp}>
         <Text style={styles.link}>{t('auth.login.signUpLink')}</Text>

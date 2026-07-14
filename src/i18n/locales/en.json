@@ -23,7 +23,23 @@
     "passwordPlaceholder": "Password",
     "login": {
       "signIn": "Sign in",
-      "signUpLink": "New here? Create an account"
+      "signUpLink": "New here? Create an account",
+      "forgotPasswordLink": "Forgot password?",
+      "forgotPasswordEmailRequired": "Enter your email above first, then tap \"Forgot password?\".",
+      "sendingReset": "Sending…",
+      "resetEmailSentTitle": "Check your email",
+      "resetEmailSentMessage": "If that email has an account, we've sent a link to reset your password."
+    },
+    "resetPassword": {
+      "title": "Set a new password",
+      "subtitle": "Choose a new password for your account.",
+      "newPasswordPlaceholder": "New password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "submit": "Save new password",
+      "tooShortError": "Password must be at least 6 characters.",
+      "mismatchError": "Passwords don't match.",
+      "successTitle": "Password updated",
+      "successMessage": "Your password has been changed."
     },
     "signup": {
       "title": "Create your account",
