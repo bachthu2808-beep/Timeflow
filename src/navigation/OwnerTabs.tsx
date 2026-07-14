@@ -9,8 +9,8 @@ import PayrollRunScreen from '../screens/owner/PayrollRunScreen';
 import ScheduleScreen from '../screens/owner/ScheduleScreen';
 import AuditLogScreen from '../screens/owner/AuditLogScreen';
 import OwnerChatStack from './OwnerChatStack';
-import LanguageToggle from '../components/LanguageToggle';
 import ScrollableTabBar from '../components/ScrollableTabBar';
+import HeaderActions from '../components/HeaderActions';
 import { usePendingApprovalsCount } from '../hooks/usePendingApprovalsCount';
 import { colors } from '../theme';
 
@@ -23,7 +23,7 @@ export default function OwnerTabs() {
   return (
     <Tab.Navigator
       tabBar={(props) => <ScrollableTabBar {...props} />}
-      screenOptions={{ headerShown: true, headerRight: () => <LanguageToggle /> }}
+      screenOptions={{ headerShown: true, headerRight: () => <HeaderActions /> }}
     >
       <Tab.Screen name="Dashboard" component={OwnerDashboardScreen} options={{ title: t('nav.owner.dashboard') }} />
       <Tab.Screen name="Shop" component={ShopScreen} options={{ title: t('nav.owner.shop') }} />

@@ -13,7 +13,10 @@
     "monthly": "Theo tháng",
     "missingInfoTitle": "Thiếu thông tin",
     "failedTitle": "Thất bại",
-    "failedToSaveTitle": "Lưu thất bại"
+    "failedToSaveTitle": "Lưu thất bại",
+    "signOut": "Đăng xuất",
+    "signOutTitle": "Đăng xuất?",
+    "signOutMessage": "Bạn sẽ cần đăng nhập lại để vào tài khoản của mình."
   },
   "auth": {
     "emailPlaceholder": "Email",
