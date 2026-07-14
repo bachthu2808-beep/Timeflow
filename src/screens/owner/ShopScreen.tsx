@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { notify } from '../../lib/notify';
+import { parseCurrencyInput } from '../../lib/currency';
 import { colors, radii, shadow, spacing } from '../../theme';
 import type { Shop } from '../../types';
 
@@ -69,6 +70,12 @@ export default function ShopScreen() {
       return;
     }
 
+    const parsedBudget = budget.trim() ? parseCurrencyInput(budget) : null;
+    if (budget.trim() && parsedBudget === null) {
+      notify(t('common.missingInfoTitle'), t('owner.shop.invalidBudgetMessage'));
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -77,7 +84,7 @@ export default function ShopScreen() {
         latitude: coords.latitude,
         longitude: coords.longitude,
         geofence_radius_meters: parseInt(radius, 10) || 100,
-        daily_labor_budget: budget.trim() ? parseFloat(budget) : null,
+        daily_labor_budget: parsedBudget,
         is_open: isOpen,
       };
 

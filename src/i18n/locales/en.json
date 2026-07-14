@@ -115,6 +115,7 @@
       "locationRequiredTitle": "Location required",
       "locationRequiredMessage": "Allow location access to set the shop as your current position.",
       "missingInfoMessage": "Enter a name and set the shop location first.",
+      "invalidBudgetMessage": "Enter a valid budget amount, or leave it blank.",
       "savedMessage": "Shop settings updated."
     },
     "roster": {

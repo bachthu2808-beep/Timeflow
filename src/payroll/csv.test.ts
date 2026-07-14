@@ -10,8 +10,16 @@ describe('buildPayrollCsv', () => {
     const lines = csv.trim().split('\n');
     expect(lines).toHaveLength(3);
     expect(lines[0]).toBe('Name,Regular Pay,Overtime Pay,Holiday Pay,Lunch Allowance,Total Pay');
-    expect(lines[1]).toBe('Alice,100.00,10.00,0.00,5.00,115.00');
-    expect(lines[2]).toBe('Bob,200.00,0.00,40.00,5.00,245.00');
+    expect(lines[1]).toBe('Alice,100,10,0,5,115');
+    expect(lines[2]).toBe('Bob,200,0,40,5,245');
+  });
+
+  it('rounds fractional amounts to whole VND rather than showing decimals', () => {
+    const csv = buildPayrollCsv([
+      { name: 'Alice', regularPay: 100.6, overtimePay: 0, holidayPay: 0, lunchAllowance: 0, totalPay: 100.6 },
+    ]);
+
+    expect(csv.trim().split('\n')[1]).toBe('Alice,101,0,0,0,101');
   });
 
   it('quotes names containing a comma', () => {

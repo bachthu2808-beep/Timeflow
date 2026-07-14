@@ -15,6 +15,13 @@ function csvField(value: string): string {
 
 const HEADER = 'Name,Regular Pay,Overtime Pay,Holiday Pay,Lunch Allowance,Total Pay';
 
+// VND has no subunits — every other amount in this app is a whole number
+// (see formatCurrency), so exporting ".00" here would be the one place that
+// implies fractional currency exists.
+function csvAmount(value: number): string {
+  return Math.round(value).toString();
+}
+
 export function buildPayrollCsv(rows: PayrollCsvRow[]): string {
   const lines = [HEADER];
 
@@ -22,11 +29,11 @@ export function buildPayrollCsv(rows: PayrollCsvRow[]): string {
     lines.push(
       [
         csvField(row.name),
-        row.regularPay.toFixed(2),
-        row.overtimePay.toFixed(2),
-        row.holidayPay.toFixed(2),
-        row.lunchAllowance.toFixed(2),
-        row.totalPay.toFixed(2),
+        csvAmount(row.regularPay),
+        csvAmount(row.overtimePay),
+        csvAmount(row.holidayPay),
+        csvAmount(row.lunchAllowance),
+        csvAmount(row.totalPay),
       ].join(',')
     );
   }

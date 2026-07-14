@@ -114,6 +114,7 @@
       "locationRequiredTitle": "Cần quyền truy cập vị trí",
       "locationRequiredMessage": "Cho phép truy cập vị trí để đặt quán tại vị trí hiện tại của bạn.",
       "missingInfoMessage": "Nhập tên quán và thiết lập vị trí trước.",
+      "invalidBudgetMessage": "Nhập ngân sách hợp lệ, hoặc để trống.",
       "savedMessage": "Đã cập nhật cài đặt quán."
     },
     "roster": {
