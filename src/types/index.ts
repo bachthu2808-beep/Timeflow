@@ -15,6 +15,7 @@ export interface Profile {
   payRuleSetId: string;
   defaultShopId: string | null;
   expoPushToken: string | null;
+  deactivatedAt: string | null;
 }
 
 export interface Shop {

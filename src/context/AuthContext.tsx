@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import i18n from '../i18n';
+import { notify } from '../lib/notify';
 import type { Profile } from '../types';
 
 interface AuthContextValue {
@@ -33,6 +35,7 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     payRuleSetId: data.pay_rule_set_id,
     defaultShopId: data.default_shop_id,
     expoPushToken: data.expo_push_token,
+    deactivatedAt: data.deactivated_at,
   };
 }
 
@@ -65,10 +68,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     setProfileLoading(true);
     fetchProfile(session.user.id).then((result) => {
-      if (!cancelled) {
-        setProfile(result);
-        setProfileLoading(false);
+      if (cancelled) return;
+      if (result?.deactivatedAt) {
+        // Keep profileLoading true (and profile null) until signOut() flips the
+        // session to null too, so RootNavigator's spinner covers this whole
+        // transition instead of briefly rendering the wrong tab set.
+        setProfile(null);
+        supabase.auth.signOut().then(() => {
+          notify(i18n.t('auth.accountRemovedTitle'), i18n.t('auth.accountRemovedMessage'));
+        });
+        return;
       }
+      setProfile(result);
+      setProfileLoading(false);
     });
 
     return () => {

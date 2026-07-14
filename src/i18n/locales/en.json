@@ -38,7 +38,9 @@
       "noInvitation": "No pending invitation found for this email. Ask your owner to invite you first.",
       "confirmEmailTitle": "Check your email",
       "confirmEmailMessage": "We sent you a confirmation link. Confirm your email, then sign in."
-    }
+    },
+    "accountRemovedTitle": "Access removed",
+    "accountRemovedMessage": "Your owner has removed your account. Contact them if you think this is a mistake."
   },
   "nav": {
     "owner": {
@@ -140,7 +142,14 @@
       "sendInvitation": "Send invitation",
       "assignedShop": "Assigned shop",
       "noShopsYet": "Set up a shop first (Shop tab) before you can assign staff to one.",
-      "noShopAssignedWarning": "No shop assigned — this person can't clock in until you pick one."
+      "noShopAssignedWarning": "No shop assigned — this person can't clock in until you pick one.",
+      "removeStaff": "Remove staff",
+      "removeConfirmTitle": "Remove {{fullName}}?",
+      "removeConfirmMessage": "They'll lose access immediately. Their past shifts and payroll history are kept — you can restore them later from the Removed staff list.",
+      "removeFailedTitle": "Failed to remove",
+      "removedStaff": "Removed staff",
+      "restore": "Restore",
+      "restoreFailedTitle": "Failed to restore"
     },
     "schedule": {
       "buildRota": "Build the rota",

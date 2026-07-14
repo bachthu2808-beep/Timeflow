@@ -29,6 +29,7 @@ export default function ChatListScreen({ navigation }: NativeStackScreenProps<Ch
       .select('id, full_name')
       .eq('owner_id', profile.id)
       .eq('role', 'employee')
+      .is('deactivated_at', null)
       .then(({ data }) => {
         if (data) setStaff(data.map((row: any) => ({ id: row.id, fullName: row.full_name })));
       });

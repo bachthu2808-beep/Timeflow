@@ -38,7 +38,9 @@
       "noInvitation": "Không tìm thấy lời mời nào đang chờ cho email này. Hãy nhờ chủ quán mời bạn trước.",
       "confirmEmailTitle": "Kiểm tra email của bạn",
       "confirmEmailMessage": "Chúng tôi đã gửi một liên kết xác nhận. Xác nhận email rồi đăng nhập."
-    }
+    },
+    "accountRemovedTitle": "Đã bị xóa quyền truy cập",
+    "accountRemovedMessage": "Chủ quán đã xóa tài khoản của bạn. Liên hệ với họ nếu bạn nghĩ đây là nhầm lẫn."
   },
   "nav": {
     "owner": {
@@ -139,7 +141,14 @@
       "sendInvitation": "Gửi lời mời",
       "assignedShop": "Quán được gán",
       "noShopsYet": "Thiết lập quán trước (tab Quán) rồi mới gán được nhân viên vào quán.",
-      "noShopAssignedWarning": "Chưa gán quán — người này chưa thể chấm công cho đến khi bạn chọn một quán."
+      "noShopAssignedWarning": "Chưa gán quán — người này chưa thể chấm công cho đến khi bạn chọn một quán.",
+      "removeStaff": "Xóa nhân viên",
+      "removeConfirmTitle": "Xóa {{fullName}}?",
+      "removeConfirmMessage": "Người này sẽ mất quyền truy cập ngay lập tức. Lịch sử ca làm và lương của họ vẫn được giữ lại — bạn có thể khôi phục sau trong danh sách Nhân viên đã xóa.",
+      "removeFailedTitle": "Xóa thất bại",
+      "removedStaff": "Nhân viên đã xóa",
+      "restore": "Khôi phục",
+      "restoreFailedTitle": "Khôi phục thất bại"
     },
     "schedule": {
       "buildRota": "Xếp lịch làm",

@@ -21,6 +21,12 @@ create table profiles (
   created_at timestamptz not null default now()
 );
 
+-- Soft-delete marker for "remove staff": we never hard-delete a staff
+-- profile (that would cascade-delete their shift/payroll history), so
+-- owners instead set this and the app treats them as removed. Idempotent
+-- so this line is also safe to re-run against an existing database.
+alter table profiles add column if not exists deactivated_at timestamptz;
+
 create table shops (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references profiles (id) on delete cascade,
@@ -290,8 +296,15 @@ create policy "shops: staff read assigned owner's shops" on shops
     owner_id in (select owner_id from profiles where id = auth.uid())
   );
 
+-- `drop policy if exists` makes this redefinition safe to re-run against an
+-- existing database that already has the original (pre-deactivation) policy.
+drop policy if exists "shifts: staff manage own shifts" on shifts;
 create policy "shifts: staff manage own shifts" on shifts
-  for all using (staff_id = auth.uid()) with check (staff_id = auth.uid());
+  for all using (staff_id = auth.uid())
+  with check (
+    staff_id = auth.uid()
+    and staff_id in (select id from profiles where deactivated_at is null)
+  );
 
 create policy "shifts: owner reads staff shifts" on shifts
   for select using (

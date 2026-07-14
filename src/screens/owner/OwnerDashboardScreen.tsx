@@ -87,7 +87,8 @@ export default function OwnerDashboardScreen() {
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', profile.id)
-      .eq('role', 'employee');
+      .eq('role', 'employee')
+      .is('deactivated_at', null);
     setStaffCount(staffTotal ?? 0);
 
     const { data: activeData } = await supabase

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { notify } from '../../lib/notify';
+import { confirm } from '../../lib/confirm';
 import { formatCurrency } from '../../lib/currency';
 import Avatar from '../../components/Avatar';
 import SectionLabel from '../../components/SectionLabel';
@@ -69,6 +70,7 @@ export default function RosterScreen() {
           payRuleSetId: row.pay_rule_set_id,
           defaultShopId: row.default_shop_id,
           expoPushToken: row.expo_push_token,
+          deactivatedAt: row.deactivated_at,
         }))
       );
     }
@@ -103,11 +105,14 @@ export default function RosterScreen() {
     load();
   }, [profile]);
 
+  const activeStaff = useMemo(() => staff.filter((s) => !s.deactivatedAt), [staff]);
+  const removedStaff = useMemo(() => staff.filter((s) => s.deactivatedAt), [staff]);
+
   const filteredStaff = useMemo(() => {
-    if (!query.trim()) return staff;
+    if (!query.trim()) return activeStaff;
     const q = query.trim().toLowerCase();
-    return staff.filter((s) => s.fullName.toLowerCase().includes(q));
-  }, [staff, query]);
+    return activeStaff.filter((s) => s.fullName.toLowerCase().includes(q));
+  }, [activeStaff, query]);
 
   function resetInviteForm() {
     setFullName('');
@@ -199,6 +204,38 @@ export default function RosterScreen() {
     }
   }
 
+  async function removeStaff(person: Profile) {
+    const ok = await confirm(
+      t('owner.roster.removeConfirmTitle', { fullName: person.fullName }),
+      t('owner.roster.removeConfirmMessage'),
+      t('common.cancel'),
+      t('owner.roster.removeStaff')
+    );
+    if (!ok) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ deactivated_at: new Date().toISOString() })
+      .eq('id', person.id);
+
+    if (error) {
+      notify(t('owner.roster.removeFailedTitle'), error.message);
+      return;
+    }
+
+    setEditing(null);
+    load();
+  }
+
+  async function restoreStaff(person: Profile) {
+    const { error } = await supabase.from('profiles').update({ deactivated_at: null }).eq('id', person.id);
+    if (error) {
+      notify(t('owner.roster.restoreFailedTitle'), error.message);
+      return;
+    }
+    load();
+  }
+
   return (
     <View style={styles.screen}>
       <View style={styles.topRow}>
@@ -208,7 +245,7 @@ export default function RosterScreen() {
             style={styles.searchInput}
             value={query}
             onChangeText={setQuery}
-            placeholder={t('owner.roster.searchPlaceholder', { count: staff.length })}
+            placeholder={t('owner.roster.searchPlaceholder', { count: activeStaff.length })}
             placeholderTextColor={colors.textMuted}
           />
         </View>
@@ -240,20 +277,39 @@ export default function RosterScreen() {
           </Pressable>
         )}
         ListFooterComponent={
-          invitations.length > 0 ? (
-            <>
-              <SectionLabel>{t('owner.roster.pendingInvitations')}</SectionLabel>
-              {invitations.map((item) => (
-                <View key={item.id} style={styles.card}>
-                  <Avatar id={item.id} name={item.fullName} size={44} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.name}>{item.fullName}</Text>
-                    <Text style={styles.meta}>{item.email}</Text>
+          <>
+            {invitations.length > 0 ? (
+              <>
+                <SectionLabel>{t('owner.roster.pendingInvitations')}</SectionLabel>
+                {invitations.map((item) => (
+                  <View key={item.id} style={styles.card}>
+                    <Avatar id={item.id} name={item.fullName} size={44} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.name}>{item.fullName}</Text>
+                      <Text style={styles.meta}>{item.email}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </>
-          ) : null
+                ))}
+              </>
+            ) : null}
+            {removedStaff.length > 0 ? (
+              <>
+                <SectionLabel>{t('owner.roster.removedStaff')}</SectionLabel>
+                {removedStaff.map((item) => (
+                  <View key={item.id} style={[styles.card, styles.cardRemoved]}>
+                    <Avatar id={item.id} name={item.fullName} size={44} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.name}>{item.fullName}</Text>
+                      <Text style={styles.meta}>{item.jobTitle ?? t('owner.roster.noJobTitle')}</Text>
+                    </View>
+                    <Pressable style={styles.restoreButton} onPress={() => restoreStaff(item)}>
+                      <Text style={styles.restoreButtonText}>{t('owner.roster.restore')}</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </>
+            ) : null}
+          </>
         }
       />
 
@@ -326,6 +382,9 @@ export default function RosterScreen() {
           <Pressable style={styles.saveButton} onPress={savePayEdit} disabled={submitting}>
             <Text style={styles.saveButtonText}>{submitting ? t('common.saving') : t('common.save')}</Text>
           </Pressable>
+          <Pressable style={styles.removeButton} onPress={() => editing && removeStaff(editing)}>
+            <Text style={styles.removeButtonText}>{t('owner.roster.removeStaff')}</Text>
+          </Pressable>
           <Pressable onPress={() => setEditing(null)}>
             <Text style={styles.cancel}>{t('common.cancel')}</Text>
           </Pressable>
@@ -367,6 +426,9 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm },
   empty: { color: colors.textMuted, marginTop: spacing.sm },
   card: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginVertical: 4, ...shadow },
+  cardRemoved: { opacity: 0.6 },
+  restoreButton: { borderWidth: 1, borderColor: colors.brand, borderRadius: radii.pill, paddingVertical: 6, paddingHorizontal: 14 },
+  restoreButtonText: { color: colors.brand, fontWeight: '700', fontSize: 13 },
   name: { fontWeight: '700', fontSize: 15, color: colors.textPrimary },
   meta: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
   rateBlock: { alignItems: 'flex-end' },
@@ -384,5 +446,7 @@ const styles = StyleSheet.create({
   chipTextSelected: { color: '#fff' },
   saveButton: { backgroundColor: colors.brand, borderRadius: radii.sm, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm },
   saveButtonText: { color: '#fff', fontWeight: '700' },
+  removeButton: { borderWidth: 1, borderColor: colors.danger, borderRadius: radii.sm, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  removeButtonText: { color: colors.danger, fontWeight: '700' },
   cancel: { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm },
 });

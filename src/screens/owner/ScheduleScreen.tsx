@@ -26,7 +26,7 @@ export default function ScheduleScreen() {
     if (!profile) return;
 
     const [{ data: staffData }, { data: shopData }, { data: scheduleData }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('owner_id', profile.id).eq('role', 'employee'),
+      supabase.from('profiles').select('*').eq('owner_id', profile.id).eq('role', 'employee').is('deactivated_at', null),
       supabase.from('shops').select('*').eq('owner_id', profile.id),
       supabase
         .from('shift_schedule')
@@ -52,6 +52,7 @@ export default function ScheduleScreen() {
           payRuleSetId: row.pay_rule_set_id,
           defaultShopId: row.default_shop_id,
           expoPushToken: row.expo_push_token,
+          deactivatedAt: row.deactivated_at,
         }))
       );
     }
