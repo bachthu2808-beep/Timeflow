@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
 export function usePendingApprovalsCount(): number {
   const { profile } = useAuth();
   const [count, setCount] = useState(0);
+  const instanceId = useId();
 
   useEffect(() => {
     if (!profile) return;
@@ -24,8 +25,12 @@ export function usePendingApprovalsCount(): number {
     }
 
     load();
+    // Channel name must be unique per mounted instance — this hook is called
+    // from both OwnerTabs (badge) and OwnerDashboardScreen (banner) at the
+    // same time, and a shared static name collides with an already-subscribed
+    // channel, throwing "cannot add postgres_changes callbacks after subscribe()".
     const channel = supabase
-      .channel('pending-approvals-badge')
+      .channel(`pending-approvals-badge-${instanceId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'approval_requests' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'swap_requests' }, load)
       .subscribe();
@@ -33,7 +38,7 @@ export function usePendingApprovalsCount(): number {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile]);
+  }, [profile, instanceId]);
 
   return count;
 }
