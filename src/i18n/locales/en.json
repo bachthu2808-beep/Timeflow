@@ -144,6 +144,15 @@
       "perMonth": "/mo",
       "tapToEditPay": "tap to edit pay",
       "jobTitlePlaceholder": "Job title (e.g. Barista)",
+      "positionLabel": "Position",
+      "positions": {
+        "manager": "Manager",
+        "barista": "Barista",
+        "waiter": "Waiter",
+        "accountant": "Accountant"
+      },
+      "setupShopBanner": "Set up your shop before adding staff, so they have somewhere to clock in.",
+      "setupShopBannerAction": "Set up shop →",
       "inviteStaff": "Invite staff",
       "noStaffYet": "No staff added yet.",
       "pendingInvitations": "Pending invitations",

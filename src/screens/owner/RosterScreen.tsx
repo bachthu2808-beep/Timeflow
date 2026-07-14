@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { notify } from '../../lib/notify';
@@ -13,6 +14,7 @@ import type { PayBasis, Profile, Shop, StaffInvitation } from '../../types';
 
 export default function RosterScreen() {
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
   const { profile } = useAuth();
   const [staff, setStaff] = useState<Profile[]>([]);
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
@@ -261,6 +263,13 @@ export default function RosterScreen() {
         </Pressable>
       </View>
 
+      {shops.length === 0 ? (
+        <Pressable style={styles.setupBanner} onPress={() => navigation.navigate('Shop')}>
+          <Text style={styles.setupBannerText}>{t('owner.roster.setupShopBanner')}</Text>
+          <Text style={styles.setupBannerAction}>{t('owner.roster.setupShopBannerAction')}</Text>
+        </Pressable>
+      ) : null}
+
       <FlatList
         data={filteredStaff}
         keyExtractor={(item) => item.id}
@@ -332,7 +341,8 @@ export default function RosterScreen() {
             value={email}
             onChangeText={setEmail}
           />
-          <TextInput style={styles.input} placeholder={t('owner.roster.jobTitlePlaceholder')} value={jobTitle} onChangeText={setJobTitle} />
+          <Text style={styles.label}>{t('owner.roster.positionLabel')}</Text>
+          <PositionChips jobTitle={jobTitle} setJobTitle={setJobTitle} t={t} />
           <PayBasisChips payBasis={payBasis} setPayBasis={setPayBasis} t={t} />
           <TextInput
             style={styles.input}
@@ -348,7 +358,16 @@ export default function RosterScreen() {
             value={lunchAllowance}
             onChangeText={setLunchAllowance}
           />
-          <ShopPicker shops={shops} selectedShopId={selectedShopId} onSelect={setSelectedShopId} t={t} />
+          <ShopPicker
+            shops={shops}
+            selectedShopId={selectedShopId}
+            onSelect={setSelectedShopId}
+            onGoToShop={() => {
+              setInviteFormOpen(false);
+              navigation.navigate('Shop');
+            }}
+            t={t}
+          />
           <Pressable style={styles.saveButton} onPress={sendInvite} disabled={submitting}>
             <Text style={styles.saveButtonText}>{submitting ? t('owner.roster.sending') : t('owner.roster.sendInvitation')}</Text>
           </Pressable>
@@ -361,7 +380,8 @@ export default function RosterScreen() {
       <Modal visible={!!editing} animationType="slide" onRequestClose={() => setEditing(null)}>
         <ScrollView contentContainerStyle={styles.formContainer}>
           <Text style={styles.formTitle}>{editing?.fullName}</Text>
-          <TextInput style={styles.input} placeholder={t('owner.roster.jobTitlePlaceholder')} value={jobTitle} onChangeText={setJobTitle} />
+          <Text style={styles.label}>{t('owner.roster.positionLabel')}</Text>
+          <PositionChips jobTitle={jobTitle} setJobTitle={setJobTitle} t={t} />
           <PayBasisChips payBasis={payBasis} setPayBasis={setPayBasis} t={t} />
           <TextInput
             style={styles.input}
@@ -370,7 +390,16 @@ export default function RosterScreen() {
             value={rate}
             onChangeText={setRate}
           />
-          <ShopPicker shops={shops} selectedShopId={selectedShopId} onSelect={setSelectedShopId} t={t} />
+          <ShopPicker
+            shops={shops}
+            selectedShopId={selectedShopId}
+            onSelect={setSelectedShopId}
+            onGoToShop={() => {
+              setEditing(null);
+              navigation.navigate('Shop');
+            }}
+            t={t}
+          />
           <Pressable style={styles.saveButton} onPress={savePayEdit} disabled={submitting}>
             <Text style={styles.saveButtonText}>{submitting ? t('common.saving') : t('common.save')}</Text>
           </Pressable>
@@ -407,22 +436,53 @@ function PayBasisChips({
   );
 }
 
+const POSITION_KEYS = ['manager', 'barista', 'waiter', 'accountant'] as const;
+
+function PositionChips({
+  jobTitle,
+  setJobTitle,
+  t,
+}: {
+  jobTitle: string;
+  setJobTitle: (title: string) => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <View style={styles.chipRow}>
+      {POSITION_KEYS.map((key) => {
+        const label = t(`owner.roster.positions.${key}`);
+        const selected = jobTitle === label;
+        return (
+          <Pressable key={key} style={[styles.chip, selected && styles.chipSelected]} onPress={() => setJobTitle(label)}>
+            <Text style={selected ? styles.chipTextSelected : styles.chipText}>{label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function ShopPicker({
   shops,
   selectedShopId,
   onSelect,
+  onGoToShop,
   t,
 }: {
   shops: Shop[];
   selectedShopId: string | null;
   onSelect: (id: string) => void;
+  onGoToShop: () => void;
   t: (key: string) => string;
 }) {
   return (
     <>
       <Text style={styles.label}>{t('owner.roster.assignedShop')}</Text>
       {shops.length === 0 ? (
-        <Text style={styles.meta}>{t('owner.roster.noShopsYet')}</Text>
+        <Pressable style={styles.setupBanner} onPress={onGoToShop}>
+          <Text style={styles.setupBannerText}>{t('owner.roster.noShopsYet')}</Text>
+          <Text style={styles.setupBannerAction}>{t('owner.roster.setupShopBannerAction')}</Text>
+        </Pressable>
       ) : (
         <View style={styles.chipRow}>
           {shops.map((s) => (
@@ -449,6 +509,19 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, paddingVertical: 12, color: colors.textPrimary },
   addButton: { backgroundColor: colors.brand, borderRadius: radii.pill, paddingHorizontal: spacing.lg, justifyContent: 'center' },
   addButtonText: { color: '#fff', fontWeight: '700' },
+  setupBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.approvalsBannerBg,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  setupBannerText: { flex: 1, color: colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  setupBannerAction: { color: colors.approvalsBannerAccent, fontWeight: '700', fontSize: 13 },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm },
   empty: { color: colors.textMuted, marginTop: spacing.sm },
   card: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, marginVertical: 4, ...shadow },

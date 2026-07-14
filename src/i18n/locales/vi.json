@@ -143,6 +143,15 @@
       "perMonth": "/tháng",
       "tapToEditPay": "nhấn để sửa lương",
       "jobTitlePlaceholder": "Chức danh (VD: Pha chế)",
+      "positionLabel": "Chức vụ",
+      "positions": {
+        "manager": "Quản lý",
+        "barista": "Pha chế",
+        "waiter": "Phục vụ",
+        "accountant": "Kế toán"
+      },
+      "setupShopBanner": "Thiết lập quán trước khi thêm nhân viên, để họ có nơi chấm công.",
+      "setupShopBannerAction": "Thiết lập quán →",
       "inviteStaff": "Mời nhân viên",
       "noStaffYet": "Chưa có nhân viên nào.",
       "pendingInvitations": "Lời mời đang chờ",
