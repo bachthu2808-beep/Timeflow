@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import { formatCurrency } from '../../lib/currency';
 import Avatar from '../../components/Avatar';
 import SectionLabel from '../../components/SectionLabel';
@@ -114,7 +115,7 @@ export default function RosterScreen() {
   async function sendInvite() {
     if (!profile) return;
     if (!fullName.trim() || !email.trim() || !rate.trim()) {
-      Alert.alert(t('common.missingInfoTitle'), t('owner.roster.missingInfoMessage'));
+      notify(t('common.missingInfoTitle'), t('owner.roster.missingInfoMessage'));
       return;
     }
 
@@ -140,13 +141,13 @@ export default function RosterScreen() {
       });
 
       if (error) {
-        Alert.alert(t('owner.roster.failedToInviteTitle'), error.message);
+        notify(t('owner.roster.failedToInviteTitle'), error.message);
         return;
       }
 
       setInviteFormOpen(false);
       load();
-      Alert.alert(t('owner.roster.invitedTitle'), t('owner.roster.invitedMessage', { fullName, email }));
+      notify(t('owner.roster.invitedTitle'), t('owner.roster.invitedMessage', { fullName, email }));
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +168,7 @@ export default function RosterScreen() {
         .eq('id', editing.id);
 
       if (error) {
-        Alert.alert(t('common.failedToSaveTitle'), error.message);
+        notify(t('common.failedToSaveTitle'), error.message);
         return;
       }
 

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import Avatar from '../../components/Avatar';
 import SectionLabel from '../../components/SectionLabel';
 import { colors, radii, shadow, spacing } from '../../theme';
@@ -89,7 +90,7 @@ export default function ScheduleScreen() {
 
   async function handleCreate() {
     if (!profile || !selectedStaffId || !selectedShopId) {
-      Alert.alert(t('common.missingInfoTitle'), t('owner.schedule.missingInfoMessage'));
+      notify(t('common.missingInfoTitle'), t('owner.schedule.missingInfoMessage'));
       return;
     }
 
@@ -102,7 +103,7 @@ export default function ScheduleScreen() {
     });
 
     if (error) {
-      Alert.alert(t('owner.schedule.failedToAddTitle'), error.message);
+      notify(t('owner.schedule.failedToAddTitle'), error.message);
       return;
     }
 
