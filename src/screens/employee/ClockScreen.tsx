@@ -254,7 +254,7 @@ export default function ClockScreen() {
       }
 
       setActiveShift(null);
-      Alert.alert(t('employee.clock.shiftEndedTitle'), t('employee.clock.shiftEndedMessage'));
+      notify(t('employee.clock.shiftEndedTitle'), t('employee.clock.shiftEndedMessage'));
     } finally {
       setBusy(false);
     }

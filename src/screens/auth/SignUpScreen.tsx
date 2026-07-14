@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import { colors, radii, shadow, spacing } from '../../theme';
 
 type Mode = 'owner' | 'employee';
@@ -55,7 +56,7 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
       }
 
       if (!data.session) {
-        Alert.alert(t('auth.signup.confirmEmailTitle'), t('auth.signup.confirmEmailMessage'));
+        notify(t('auth.signup.confirmEmailTitle'), t('auth.signup.confirmEmailMessage'));
         onBackToLogin();
       }
     } finally {
