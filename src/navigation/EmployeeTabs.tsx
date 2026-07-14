@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import ClockScreen from '../screens/employee/ClockScreen';
@@ -14,7 +15,18 @@ export default function EmployeeTabs() {
   const { t } = useTranslation();
 
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true, headerRight: () => <LanguageToggle /> }}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: true,
+        headerRight: () => <LanguageToggle />,
+        tabBarItemStyle: { paddingHorizontal: 1 },
+        tabBarLabel: ({ color, children }) => (
+          <Text numberOfLines={2} style={{ fontSize: 9, lineHeight: 11, color, textAlign: 'center' }}>
+            {children}
+          </Text>
+        ),
+      }}
+    >
       <Tab.Screen name="Clock" component={ClockScreen} options={{ title: t('nav.employee.clock') }} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ title: t('nav.employee.schedule') }} />
       <Tab.Screen name="Payslip" component={PayslipScreen} options={{ title: t('nav.employee.payslip') }} />
