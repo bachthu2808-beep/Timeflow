@@ -41,6 +41,11 @@
           "cameraPermission": "TimeFlow takes a photo when you clock in, so your owner can verify who worked each shift."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "156df94f-d0fb-48ad-a4f9-bedeba397948"
+      }
+    }
   }
 }
