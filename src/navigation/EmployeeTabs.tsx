@@ -1,5 +1,4 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import ClockScreen from '../screens/employee/ClockScreen';
@@ -8,6 +7,7 @@ import HistoryScreen from '../screens/employee/HistoryScreen';
 import ScheduleScreen from '../screens/employee/ScheduleScreen';
 import ChatScreen from '../screens/employee/ChatScreen';
 import LanguageToggle from '../components/LanguageToggle';
+import ScrollableTabBar from '../components/ScrollableTabBar';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,16 +16,8 @@ export default function EmployeeTabs() {
 
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: true,
-        headerRight: () => <LanguageToggle />,
-        tabBarItemStyle: { paddingHorizontal: 1 },
-        tabBarLabel: ({ color, children }) => (
-          <Text numberOfLines={2} style={{ fontSize: 9, lineHeight: 11, color, textAlign: 'center' }}>
-            {children}
-          </Text>
-        ),
-      }}
+      tabBar={(props) => <ScrollableTabBar {...props} />}
+      screenOptions={{ headerShown: true, headerRight: () => <LanguageToggle /> }}
     >
       <Tab.Screen name="Clock" component={ClockScreen} options={{ title: t('nav.employee.clock') }} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ title: t('nav.employee.schedule') }} />
