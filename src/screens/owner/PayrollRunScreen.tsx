@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import { calculatePay } from '../../payroll/calculatePay';
 import { GENERIC_PAY_RULES } from '../../payroll/payRules';
 import { buildPayrollCsv, PayrollCsvRow } from '../../payroll/csv';
@@ -98,7 +99,7 @@ export default function PayrollRunScreen() {
 
     try {
       if (rows.length === 0) {
-        Alert.alert(t('owner.payroll.noStaffTitle'), t('owner.payroll.noStaffMessage'));
+        notify(t('owner.payroll.noStaffTitle'), t('owner.payroll.noStaffMessage'));
         return;
       }
 

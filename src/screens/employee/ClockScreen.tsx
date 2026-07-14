@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import NetInfo from '@react-native-community/netinfo';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import { isWithinGeofence } from '../../lib/geofence';
 import { enqueue, flushQueue, getQueueLength } from '../../lib/offlineQueue';
 import { calculatePay } from '../../payroll/calculatePay';
@@ -129,13 +130,13 @@ export default function ClockScreen() {
     if (!profile) return;
 
     if (!shop) {
-      Alert.alert(t('employee.clock.noShopTitle'), t('employee.clock.noShopMessage'));
+      notify(t('employee.clock.noShopTitle'), t('employee.clock.noShopMessage'));
       return;
     }
 
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('owner.shop.locationRequiredTitle'), t('employee.clock.locationRequiredMessage'));
+      notify(t('owner.shop.locationRequiredTitle'), t('employee.clock.locationRequiredMessage'));
       return;
     }
 
@@ -149,7 +150,7 @@ export default function ClockScreen() {
       );
 
       if (!withinRange) {
-        Alert.alert(t('employee.clock.outOfRangeTitle'), t('employee.clock.outOfRangeMessage'));
+        notify(t('employee.clock.outOfRangeTitle'), t('employee.clock.outOfRangeMessage'));
         return;
       }
 
@@ -207,7 +208,7 @@ export default function ClockScreen() {
           mockedLocation,
           clockInPhotoUrl: null,
         });
-        Alert.alert(t('employee.clock.savedOfflineTitle'), t('employee.clock.savedOfflineMessage'));
+        notify(t('employee.clock.savedOfflineTitle'), t('employee.clock.savedOfflineMessage'));
         return;
       }
 

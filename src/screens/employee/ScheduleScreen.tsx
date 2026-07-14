@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import SectionLabel from '../../components/SectionLabel';
 import { colors, radii, shadow, spacing } from '../../theme';
 import type { ScheduledShift, SwapRequest } from '../../types';
@@ -79,8 +80,8 @@ export default function EmployeeScheduleScreen() {
       owner_id: scheduleShift.ownerId,
       requesting_staff_id: profile.id,
     });
-    if (error) Alert.alert(t('common.failedTitle'), error.message);
-    else Alert.alert(t('employee.schedule.offeredTitle'), t('employee.schedule.offeredMessage'));
+    if (error) notify(t('common.failedTitle'), error.message);
+    else notify(t('employee.schedule.offeredTitle'), t('employee.schedule.offeredMessage'));
   }
 
   async function acceptSwap(swap: SwapRequest) {
@@ -89,7 +90,7 @@ export default function EmployeeScheduleScreen() {
       .from('swap_requests')
       .update({ status: 'accepted', accepted_by_staff_id: profile.id })
       .eq('id', swap.id);
-    if (error) Alert.alert(t('common.failedTitle'), error.message);
+    if (error) notify(t('common.failedTitle'), error.message);
     else load();
   }
 

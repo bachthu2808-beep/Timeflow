@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import SectionLabel from '../../components/SectionLabel';
 import { colors, radii, shadow, spacing } from '../../theme';
 import type { ApprovalRequest, SwapRequest } from '../../types';
@@ -75,7 +76,7 @@ export default function ApprovalsScreen() {
 
   async function respond(id: string, status: 'approved' | 'denied') {
     const { error } = await supabase.from('approval_requests').update({ status }).eq('id', id);
-    if (error) Alert.alert(t('common.failedTitle'), error.message);
+    if (error) notify(t('common.failedTitle'), error.message);
   }
 
   async function respondToSwap(swap: SwapRequest, approve: boolean) {
@@ -85,7 +86,7 @@ export default function ApprovalsScreen() {
         .update({ staff_id: swap.acceptedByStaffId })
         .eq('id', swap.scheduleId);
       if (scheduleError) {
-        Alert.alert(t('common.failedTitle'), scheduleError.message);
+        notify(t('common.failedTitle'), scheduleError.message);
         return;
       }
     }
@@ -94,7 +95,7 @@ export default function ApprovalsScreen() {
       .from('swap_requests')
       .update({ status: approve ? 'owner_approved' : 'denied' })
       .eq('id', swap.id);
-    if (error) Alert.alert(t('common.failedTitle'), error.message);
+    if (error) notify(t('common.failedTitle'), error.message);
     else load();
   }
 

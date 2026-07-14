@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import { colors, radii, shadow, spacing } from '../../theme';
 import type { Shop } from '../../types';
 
@@ -47,7 +48,7 @@ export default function ShopScreen() {
   async function useCurrentLocation() {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('owner.shop.locationRequiredTitle'), t('owner.shop.locationRequiredMessage'));
+      notify(t('owner.shop.locationRequiredTitle'), t('owner.shop.locationRequiredMessage'));
       return;
     }
     const position = await Location.getCurrentPositionAsync({});
@@ -64,7 +65,7 @@ export default function ShopScreen() {
   async function save() {
     if (!profile) return;
     if (!name.trim() || !coords) {
-      Alert.alert(t('common.missingInfoTitle'), t('owner.shop.missingInfoMessage'));
+      notify(t('common.missingInfoTitle'), t('owner.shop.missingInfoMessage'));
       return;
     }
 
@@ -85,7 +86,7 @@ export default function ShopScreen() {
         : await supabase.from('shops').insert(payload);
 
       if (error) {
-        Alert.alert(t('common.failedToSaveTitle'), error.message);
+        notify(t('common.failedToSaveTitle'), error.message);
         return;
       }
 
@@ -103,7 +104,7 @@ export default function ShopScreen() {
         }
       }
 
-      Alert.alert(t('common.savedTitle'), t('owner.shop.savedMessage'));
+      notify(t('common.savedTitle'), t('owner.shop.savedMessage'));
       load();
     } finally {
       setSaving(false);
