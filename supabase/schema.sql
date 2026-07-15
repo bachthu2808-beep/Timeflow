@@ -200,8 +200,19 @@ create table staff_invitations (
   lunch_allowance_per_shift numeric not null default 0,
   default_shop_id uuid references shops (id) on delete set null,
   consumed_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- Optional first shift the owner schedules at invite time, so the
+  -- employee already has a shop and a shift lined up the moment they
+  -- finish signing up — no separate trip to the Schedule tab needed.
+  -- Nullable: applied by handle_new_user() below once the invitation is
+  -- consumed, since shift_schedule.staff_id can't reference a profile that
+  -- doesn't exist yet.
+  first_shift_starts_at timestamptz,
+  first_shift_ends_at timestamptz
 );
+
+alter table staff_invitations add column if not exists first_shift_starts_at timestamptz;
+alter table staff_invitations add column if not exists first_shift_ends_at timestamptz;
 
 alter table staff_invitations enable row level security;
 
@@ -245,6 +256,14 @@ begin
         new.id, inv.owner_id, 'employee', inv.full_name, inv.job_title, inv.pay_basis, inv.hourly_rate,
         inv.monthly_rate, inv.lunch_allowance_per_shift, inv.default_shop_id
       );
+
+      -- If the owner set a first shift at invite time, create it now that a
+      -- real profile exists for staff_id to reference. Requires a shop too
+      -- (shift_schedule.shop_id is not null) — skipped otherwise.
+      if inv.first_shift_starts_at is not null and inv.first_shift_ends_at is not null and inv.default_shop_id is not null then
+        insert into shift_schedule (owner_id, shop_id, staff_id, starts_at, ends_at)
+        values (inv.owner_id, inv.default_shop_id, new.id, inv.first_shift_starts_at, inv.first_shift_ends_at);
+      end if;
 
       update staff_invitations set consumed_at = now() where id = inv.id;
     end if;

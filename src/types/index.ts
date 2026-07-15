@@ -112,6 +112,8 @@ export interface StaffInvitation {
   monthlyRate: number | null;
   lunchAllowancePerShift: number;
   defaultShopId: string | null;
+  firstShiftStartsAt: string | null;
+  firstShiftEndsAt: string | null;
   consumedAt: string | null;
   createdAt: string;
 }

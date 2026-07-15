@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
@@ -30,6 +31,10 @@ export default function RosterScreen() {
   const [rate, setRate] = useState('');
   const [lunchAllowance, setLunchAllowance] = useState('0');
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
+  const [assignFirstShift, setAssignFirstShift] = useState(false);
+  const [firstShiftStart, setFirstShiftStart] = useState(new Date());
+  const [firstShiftEnd, setFirstShiftEnd] = useState(new Date(Date.now() + 4 * 60 * 60 * 1000));
+  const [shiftPickerTarget, setShiftPickerTarget] = useState<'start' | 'end' | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function load() {
@@ -96,6 +101,8 @@ export default function RosterScreen() {
           monthlyRate: row.monthly_rate,
           lunchAllowancePerShift: row.lunch_allowance_per_shift,
           defaultShopId: row.default_shop_id,
+          firstShiftStartsAt: row.first_shift_starts_at,
+          firstShiftEndsAt: row.first_shift_ends_at,
           consumedAt: row.consumed_at,
           createdAt: row.created_at,
         }))
@@ -124,6 +131,9 @@ export default function RosterScreen() {
     setRate('');
     setLunchAllowance('0');
     setSelectedShopId(shops[0]?.id ?? null);
+    setAssignFirstShift(false);
+    setFirstShiftStart(new Date());
+    setFirstShiftEnd(new Date(Date.now() + 4 * 60 * 60 * 1000));
   }
 
   function openInviteForm() {
@@ -152,6 +162,16 @@ export default function RosterScreen() {
       return;
     }
 
+    if (assignFirstShift && !selectedShopId) {
+      notify(t('common.missingInfoTitle'), t('owner.roster.firstShiftNeedsShopMessage'));
+      return;
+    }
+
+    if (assignFirstShift && firstShiftEnd <= firstShiftStart) {
+      notify(t('common.missingInfoTitle'), t('owner.roster.firstShiftInvalidTimesMessage'));
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { error } = await supabase.from('staff_invitations').insert({
@@ -164,6 +184,8 @@ export default function RosterScreen() {
         monthly_rate: payBasis === 'monthly' ? parsedRate : null,
         lunch_allowance_per_shift: parseCurrencyInput(lunchAllowance) ?? 0,
         default_shop_id: selectedShopId,
+        first_shift_starts_at: assignFirstShift ? firstShiftStart.toISOString() : null,
+        first_shift_ends_at: assignFirstShift ? firstShiftEnd.toISOString() : null,
       });
 
       if (error) {
@@ -368,6 +390,36 @@ export default function RosterScreen() {
             }}
             t={t}
           />
+
+          <View style={styles.switchRow}>
+            <Text style={styles.label}>{t('owner.roster.assignFirstShiftLabel')}</Text>
+            <Switch value={assignFirstShift} onValueChange={setAssignFirstShift} trackColor={{ true: colors.brand }} />
+          </View>
+          {assignFirstShift ? (
+            <View style={styles.timeRow}>
+              <Pressable style={styles.timeButton} onPress={() => setShiftPickerTarget('start')}>
+                <Text style={styles.label}>{t('owner.schedule.startLabel')}</Text>
+                <Text style={styles.timeValue}>{firstShiftStart.toLocaleString()}</Text>
+              </Pressable>
+              <Pressable style={styles.timeButton} onPress={() => setShiftPickerTarget('end')}>
+                <Text style={styles.label}>{t('owner.schedule.endLabel')}</Text>
+                <Text style={styles.timeValue}>{firstShiftEnd.toLocaleString()}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {shiftPickerTarget ? (
+            <DateTimePicker
+              value={shiftPickerTarget === 'start' ? firstShiftStart : firstShiftEnd}
+              mode="datetime"
+              onChange={(_event, date) => {
+                if (date) {
+                  shiftPickerTarget === 'start' ? setFirstShiftStart(date) : setFirstShiftEnd(date);
+                }
+                setShiftPickerTarget(null);
+              }}
+            />
+          ) : null}
+
           <Pressable style={styles.saveButton} onPress={sendInvite} disabled={submitting}>
             <Text style={styles.saveButtonText}>{submitting ? t('owner.roster.sending') : t('owner.roster.sendInvitation')}</Text>
           </Pressable>
@@ -537,6 +589,10 @@ const styles = StyleSheet.create({
   formTitle: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
   label: { color: colors.textMuted, fontSize: 12 },
   warning: { color: colors.danger, fontSize: 12 },
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm },
+  timeRow: { flexDirection: 'row', gap: spacing.md },
+  timeButton: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, padding: spacing.md },
+  timeValue: { color: colors.textPrimary },
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, padding: spacing.md, fontSize: 16, color: colors.textPrimary },
   chipRow: { flexDirection: 'row', gap: spacing.sm },
   chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 14 },
