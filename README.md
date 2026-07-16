@@ -19,6 +19,10 @@ earnings ticker, payslips, scheduling, shift swaps, and in-app chat.
   Clock In / Clock Out, not tracked continuously in the background). This
   keeps App Store / Play Store review simpler than background-geofencing
   apps — deliberately deferred, see "Known limitations" below.
+  **The geofence check itself is currently disabled** in `ClockScreen.tsx`
+  (see the comment marking where it was removed) — a deliberate, temporary
+  change to unblock live testing while other bugs were fixed. Re-enable it
+  before any real unsupervised use.
 
 ## Project layout
 
@@ -118,9 +122,10 @@ decimals, "đ" suffix — matching the reference design.
 npx jest
 ```
 
-Every pure calculation in `src/payroll/` and `src/lib/geofence.ts` +
-`src/lib/offlineQueue.ts` has full unit test coverage (54 tests) — run these
-before changing pay logic, since a payroll bug is a trust-breaking bug.
+Every pure calculation in `src/payroll/` and `src/lib/geofence.ts`,
+`src/lib/offlineQueue.ts`, and `src/lib/currency.ts` has full unit test
+coverage (66 tests) — run these before changing pay logic or money parsing,
+since a payroll bug is a trust-breaking bug.
 
 ## Feature status
 
@@ -154,6 +159,21 @@ before changing pay logic, since a payroll bug is a trust-breaking bug.
 - Best-effort spoofed-GPS flagging (Android `mocked` signal, surfaced to the
   owner rather than hard-blocking clock-in)
 - Push notification token registration
+- Remove/restore staff (soft-delete — `profiles.deactivated_at`; keeps
+  historical shift/payroll data intact, blocks further writes via RLS,
+  reversible from the Roster screen's "Removed staff" list)
+- Self-service forgot-password flow (email a reset link, land back on a
+  "set new password" screen)
+- Assign a staff member's first shift at invite time — their shop and
+  first shift are both already set the moment they finish signing up
+- A fixed staff "position" picker (Manager / Barista / Waiter /
+  Accountant) instead of freeform job-title text
+- A full RLS security hardening pass: closed a gap where a removed
+  employee could still write/delete their own records, added
+  cross-tenant checks so a row's `owner_id`/`shop_id` is verified against
+  the real owner↔staff relationship (not just "sender is a participant"),
+  fixed a shift-swap "accept" policy that was silently no-opping, and
+  pinned `search_path` on the `SECURITY DEFINER` trigger functions
 
 **Known limitations — deliberately not built:**
 - **True face-match verification.** Photo capture at clock-in is real; an
@@ -173,4 +193,16 @@ before changing pay logic, since a payroll bug is a trust-breaking bug.
   is decided; the engine already supports multi-tier overtime, rounding,
   holiday pay, and paid-vs-unpaid lunch without further code changes.
 - Multi-shop switcher UI — an owner with more than one shop can only manage
-  the first one created; the data model supports more, the UI doesn't yet.
+  the first one created (`ShopScreen.tsx` always loads/edits a single row);
+  the data model and Roster's shop-picker already support more, the Shop
+  tab's UI doesn't yet.
+- **Session revocation on staff removal.** Removing a staff member blocks
+  their further writes via RLS immediately, but doesn't revoke their
+  existing Supabase Auth session/token — that needs a Supabase Edge
+  Function calling the Admin API with the service-role key.
+- **Invite emails.** Inviting staff (Roster → Invite staff) creates the
+  invitation record, but no email is sent — the owner currently has to
+  tell the new hire manually to go create an account with that email.
+- **CI/CD.** Deploys (the GitHub Pages web build) are currently a manual,
+  by-hand process — see the deploy notes in `supabase/schema.sql`'s
+  companion docs, or ask whoever's been running this cycle's test rounds.
